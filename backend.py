@@ -1,4 +1,5 @@
-import re, os, requests, datetime
+import re, os, requests, json
+from time import time
 from netaddr import *
 from genie.testbed import load
 from requests.auth import HTTPBasicAuth
@@ -12,6 +13,7 @@ base_url = "https://" + os.environ.get('ISE_IP', "") + ":9060/ers/config/"
 switch_user = os.environ.get('SWITCH_USER', "netadmin")
 switch_password = os.environ.get('SWITCH_PASS', "")
 switch_enable = os.environ.get('SWITCH_ENABLE', "")
+voucher_group_name = "AAA-Vouchers"
 
 headers = {"Content-Type": "application/json",
     "Accept": "application/json"}
@@ -27,6 +29,7 @@ testbed_template = {'devices':{
         'os': 'iosxe' }}}
 ######   End of envrionment setup   ######
 
+######         ISE functions        ######
 def get_all_NADs():
     '''
     This function will retrieve all NADs configured on ISE, and return a disctionary with
@@ -47,13 +50,85 @@ def get_all_NADs():
             nad_url = url + NAD['id']
             NAD_details = requests.get(url=url+NAD['id'], headers=headers, auth=auth, verify=False).json()
             NAD_list_details[NAD_details['NetworkDevice']['name']] = NAD_details['NetworkDevice']['NetworkDeviceIPList'][0]['ipaddress']
-            return(NAD_list_details)
+        print(f"Found {len(NAD_list_details)} NADs.")
+        return(NAD_list_details)
     except:
         print('An error has occured trying to fetch the NAD list')
         return({'ERROR','ERROR'})
 
 
-def get_device_auth_sessions(device_ip):
+def get_ise_groups():
+    '''
+    This function will retrieve all group IDs from Cisco ISE
+    and return a disctionary.
+    {'Sony-Device': '38a73670-8c00-11e6-996c-525400b48521', 
+    'Cisco-Meraki-Device': '1e2700a0-8c00-11e6-996c-525400b48521', 
+    'AAA-Vouchers': '5fbf36d0-61f9-11eb-adb5-c2c2c4652c66'}
+    '''
+    url = base_url + "endpointgroup/"
+    ise_groups = {}
+    while True:
+        print("Fetching for ISE endpoint groups...")
+        response = requests.get(url=url, auth=auth, headers=headers, verify=False)
+        data = response.json()
+        for each in data["SearchResult"]["resources"]:
+            ise_groups[each["name"]] = each["id"]
+        try:
+            if data["SearchResult"]["nextPage"]["href"]:
+                url = data["SearchResult"]["nextPage"]["href"]
+        except:
+            break
+    return (ise_groups)
+
+
+def get_ise_group_id(group_name:str):
+    '''
+    This function will return the ISE group id a given group name.
+    '''
+    ise_groups = get_ise_groups()
+    if group_name in ise_groups.keys():
+        return(ise_groups[group_name])
+    else:
+        print(f"ERROR: Group {group_name} was not found")
+        return("ERROR")
+
+
+def update_ise_endpoint_group(mac_address:str, group_name:str):
+    ise_group_id = get_ise_group_id(group_name)
+    print(f"ISE endpoint group name: {group_name}, id: {ise_group_id}")
+    if ise_group_id != "ERROR":
+        url = base_url + "endpoint/name/" + mac_address
+        endpoint_id = requests.get(url=url, auth=auth, headers=headers, 
+            verify=False).json()["ERSEndPoint"]["id"]
+        print(f"ISE endpoint {mac_address}, id: {endpoint_id}")
+        #
+        url = base_url + "endpoint/" + endpoint_id
+        data = ('{"ERSEndPoint": {"groupId": "%s","staticGroupAssignment": "true"}}' % ise_group_id)
+        response = requests.put(url=url, data=data, auth=auth, headers=headers, verify=False)
+        print(response)
+        return("Done")
+    else:
+        return("ERROR")
+
+
+def remove_ise_endpoint_group(mac_address:str, group_name:str):
+    ise_group_id = get_ise_group_id(group_name)
+    if ise_group_id != "ERROR":
+        url = base_url + "endpoint/name/" + mac_address
+        endpoint_id = requests.get(url=url, auth=auth, headers=headers, 
+            verify=False).json()["ERSEndPoint"]["id"]
+        #
+        url = base_url + "endpoint/" + endpoint_id
+        data = ('{"ERSEndPoint": {"groupId": "%s","staticGroupAssignment": "true"}}' % ise_group_id)
+        response = requests.delete(url=url, data=data, auth=auth, headers=headers, verify=False)
+        print(response)
+        return("Done")
+    else:
+        return("ERROR")
+######       End of ISE functions      ######
+
+        
+def get_device_auth_sessions(device_ip: str):
     '''
     This function will retrieve the active authentication sessions on a 
     given NAD/Switch (required: NAD's ip address), and returns a list of 
@@ -79,7 +154,7 @@ def get_device_auth_sessions(device_ip):
                 if auth_sessions['interfaces'][interface]['client'][client]['domain'] != "UNKNOWN":
                     session = { 'Interface': interface,
                                 'Endpoint MAC': client,
-                                'NIC Vendor': EUI(client).oui.registration()['org']
+                                'NIC Vendor': EUI(client).oui.registration()['org'],
                                 'Status': auth_sessions['interfaces'][interface]['client'][client]['status'],
                                 'Method': auth_sessions['interfaces'][interface]['client'][client]['method']
                         }
@@ -91,89 +166,77 @@ def get_device_auth_sessions(device_ip):
         return([f"ERROR: Problem connecting to {device_ip}..."])
 
 
-def format_mac(mac_address):
+def format_mac(mac_address:str):
+    '''
+    This function will validate MAC address input and return a MAC address
+    formatted in "the Cisco way" (e.g. xxxx.xxxx.xxxx).
+    '''
     try:
         mac = EUI(mac_address)
         mac.dialect = mac_cisco
-        return(mac)
+        return(str(mac))
     except:
         print("ERROR: Invalid mac address")
         return("ERROR")
 
 
-def read_voucher_list():
+def read_voucher_json():
     try:
         print("Reading the voucher list")
-        with open('voucher.txt', 'r') as f:
-            voucher_list = f.readlines()
-        return(voucher_list)
+        with open('voucher.json', 'r') as f:
+            voucher_json = json.loads(f.read())
     except:
-        print("Looks like the voucher list does not exist. Creating a new one")
-        with open('voucher.txt', 'w') as f:
-            f.write("")
-            return("")
+        print("Looks like the voucher list does not exist. Creating a new one...")
+        with open('voucher.json', 'w') as f:
+            voucher_json = {}
+            json.dump(voucher_json, f)
+    return(voucher_json)
 
 
-def add_voucher(mac_address, duration):
+def add_voucher(mac_address: str, duration: int):
     mac = format_mac(mac_address)
     if mac != "ERROR":
-        # Update the voucher file
-        voucher_list = read_voucher_list()
-        print(f"Adding MAC {mac_address} with a duration of {duration} minutes to the voucher list")
-        voucher_list.append(f"{mac_address},{duration}")
-        with open('voucher.txt', 'w') as f:
-            f.write(voucher_list)
-        # Update ISE
-        update_ise_endpoint(mac_address, "AAA-Vouchers")
-
-
-def revoke_voucher(mac_address):
-    voucher_list = read_voucher_list()
-
-
-def get_ise_groups():
-    '''
-    This function will retrieve all group IDs from Cisco ISE
-    and return a disctionary.
-    {'group_id': 'group_name'}
-    '''
-    url = base_url + "endpointgroup/"
-    ise_groups = {}
-    while True:
-        response = requests.get(url=url, auth=auth, headers=headers, verify=False)
-        data = response.json()
-        for each in data["SearchResult"]["resources"]:
-            ise_groups[each["name"]] = each["id"]
         try:
-            if data["SearchResult"]["nextPage"]["href"]:
-                url = data["SearchResult"]["nextPage"]["href"]
+            # Update ISE
+            update_ise_endpoint_group(mac, voucher_group_name)
+            # Update the voucher file
+            voucher_json = read_voucher_json()
+            print(f"Adding MAC {mac} with a duration of {duration} minutes to the voucher list")
+            voucher_json[mac] = time() + duration
+            with open('voucher.json', 'w') as f:
+                json.dump(voucher_json, f)
+            return("Done")
         except:
-            break
-    return (ise_groups)
+            print(f"ERROR: Wasn't able to add {mac} to the voucher list")
+    else:
+        return("ERROR")
 
 
-def get_ise_group_id(group_name):
-    '''
-    This function will return the ISE group id a given group name.
-    '''
-    ise_groups = get_ise_groups()
-    for group in ise_groups:
-        if group == group_name:
-            return(ise_groups[group])
-    print(f"ERROR: Group {group_name} was not found")
-    return("ERROR")
+def revoke_voucher(mac_address: str):
+    mac = format_mac(mac_address)
+    try:
+        # Update ISE
+        print(f"Deleting MAC {mac} from ISE")
+        remove_ise_endpoint_group(mac_address, voucher_group_name)
+        # Update voucher file
+        voucher_json = read_voucher_json()
+        if mac in voucher_json:
+            print(f"Deleting MAC {mac} from the voucher list")
+            del voucher_json[mac]
+            with open('voucher.json', 'w') as f:
+                json.dump(voucher_json, f)
+            return("Done")
+        else:
+            print(f"ERROR: MAC address {mac} not found on the voucher list")
+    except:
+        print(f"ERROR: MAC address {mac} not found on ISE")
+        return("ERROR")
 
 
-def update_ise_endpoint(mac_address, group_name):
-    group_id = get_group_id(group_name)
-    if group_id != "ERROR":
-        url = base_url + "endpoint/name/" + mac_address
-        endpoint_id = requests.get(url=url, auth=auth, headers=headers, 
-            verify=False).json()["ERSEndPoint"]["id"]
-        #
-        url = base_url + "endpoint/" + endpoint_id
-        data = ('{"ERSEndPoint": {"groupId": "%s","staticGroupAssignment": "true"}}' % ise_group_id)
-        response = requests.post(url=url, data=data, auth=auth, headers=headers, verify=False)
-        print(response)
-
-    
+def voucher_cleanup(voucher_group_name: str):
+    print("About to clean up the voucher list...")
+    voucher_json = read_voucher_json()
+    for mac in voucher_json:
+        if voucher_json[mac] < time():
+            print(f"Removing expired voucher for {mac}.")
+            revoke_voucher(mac)
