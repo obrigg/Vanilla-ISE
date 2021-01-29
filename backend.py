@@ -57,37 +57,17 @@ def get_all_NADs():
         return({'ERROR','ERROR'})
 
 
-def get_ise_groups():
-    '''
-    This function will retrieve all group IDs from Cisco ISE
-    and return a disctionary.
-    {'Sony-Device': '38a73670-8c00-11e6-996c-525400b48521', 
-    'Cisco-Meraki-Device': '1e2700a0-8c00-11e6-996c-525400b48521', 
-    'AAA-Vouchers': '5fbf36d0-61f9-11eb-adb5-c2c2c4652c66'}
-    '''
-    url = base_url + "endpointgroup/"
-    ise_groups = {}
-    while True:
-        print("Fetching for ISE endpoint groups...")
-        response = requests.get(url=url, auth=auth, headers=headers, verify=False)
-        data = response.json()
-        for each in data["SearchResult"]["resources"]:
-            ise_groups[each["name"]] = each["id"]
-        try:
-            if data["SearchResult"]["nextPage"]["href"]:
-                url = data["SearchResult"]["nextPage"]["href"]
-        except:
-            break
-    return (ise_groups)
-
-
-def get_ise_group_id(group_name:str):
+def get_ise_group_id(group_name: str):
     '''
     This function will return the ISE group id a given group name.
     '''
-    ise_groups = get_ise_groups()
-    if group_name in ise_groups.keys():
-        return(ise_groups[group_name])
+    print(f"Fetching for ISE for endpoint group {group_name}...")
+    url = base_url + "endpointgroup/name/" + group_name
+    response = requests.get(url=url, auth=auth, headers=headers, verify=False)
+    if response.status_code == 200:
+        group_id = response.json()['EndPointGroup']['id']
+        print(f"ISE endpoint group {group_name}, id: {group_id}")
+        return(group_id)
     else:
         print(f"ERROR: Group {group_name} was not found")
         return("ERROR")
@@ -194,6 +174,11 @@ def read_voucher_json():
 
 
 def add_voucher(mac_address: str, duration: int):
+    '''
+    This function will receive an endpoint MAC address, add it to ISE's
+    voucher endpoint group, and add an entry to the voucher list file 
+    with the duration of the voucher, in order to clean it up once it expires.
+    '''
     mac = format_mac(mac_address)
     if mac != "ERROR":
         try:
@@ -213,6 +198,10 @@ def add_voucher(mac_address: str, duration: int):
 
 
 def revoke_voucher(mac_address: str):
+    '''
+    This function will receive an endpoint MAC address, remove it from 
+    ISE's voucher endpoint group, and from the voucher list file.
+    '''
     mac = format_mac(mac_address)
     try:
         # Update ISE
@@ -234,9 +223,14 @@ def revoke_voucher(mac_address: str):
 
 
 def voucher_cleanup(voucher_group_name: str):
+    '''
+    This function will go through the voucher list and remove endpoints
+    with an expired voucher from ISE's endpoint group.
+    '''
     print("About to clean up the voucher list...")
     voucher_json = read_voucher_json()
     for mac in voucher_json:
         if voucher_json[mac] < time():
             print(f"Removing expired voucher for {mac}.")
             revoke_voucher(mac)
+
