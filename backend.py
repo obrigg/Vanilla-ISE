@@ -129,12 +129,14 @@ def check_ise_auth_status(mac_address:str):
         if response.status_code == 200:
             status = xmltodict.parse(response.text)
             if status['authStatusOutputList']['authStatusList']['authStatusElements']['passed']['#text'] == "true":
+                status_details['Status'] = "Success"
                 status_details['MAC Address'] = status['authStatusOutputList']['authStatusList']['@key']
                 status_details['NAD'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['network_device_name']
                 status_details['Interface'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['nas_port_id']
                 status_details['Auth Method'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['authentication_method']
                 status_details['Username'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['user_name']
             else:
+                status_details['Status'] = "Failure"
                 status_details['MAC Address'] = status['authStatusOutputList']['authStatusList']['@key']
                 status_details['NAD'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['network_device_name']
                 status_details['Interface'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['nas_port_id']
