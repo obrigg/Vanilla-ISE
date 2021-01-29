@@ -1,4 +1,4 @@
-import re, os, requests, json
+import re, os, requests, json, xmltodict
 from time import time
 from netaddr import *
 from genie.testbed import load
@@ -105,6 +105,43 @@ def remove_ise_endpoint_group(mac_address:str, group_name:str):
         return("Done")
     else:
         return("ERROR")
+
+
+def initialize_ise():
+    url = "https://" + os.environ.get('ISE_IP', "") + "/admin/"
+    response = requests.get(url=url, auth=auth, headers=headers, verify=False)
+    if response.status_code == 200:
+        return("Done")
+    else:
+        print(f"ERROR: Can't access ISE. Code: {response.status_code}")
+        return("ERROR")
+
+
+def check_ise_auth_status(mac_address:str):
+    '''
+    This function will return the authentication status of a given endpoint.
+    '''
+    mac = format_mac(mac_address)
+    status_details = {}
+    if mac != "ERROR":
+        url = "https://" + os.environ.get('ISE_IP', "") + "/admin/API/mnt/AuthStatus/MACAddress/" + mac + "/120/1/All"
+        response = requests.get(url=url, auth=auth, verify=False)
+        if response.status_code == 200:
+            status = xmltodict.parse(response.text)
+            if status['authStatusOutputList']['authStatusList']['authStatusElements']['passed']['#text'] == "true":
+                status_details['MAC Address'] = status['authStatusOutputList']['authStatusList']['@key']
+                status_details['NAD'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['network_device_name']
+                status_details['Interface'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['nas_port_id']
+                status_details['Auth Method'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['authentication_method']
+                status_details['Username'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['user_name']
+            else:
+                status_details['MAC Address'] = status['authStatusOutputList']['authStatusList']['@key']
+                status_details['NAD'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['network_device_name']
+                status_details['Interface'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['nas_port_id']
+                status_details['Auth Method'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['authentication_method']
+                status_details['Username'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['user_name']
+                status_details['Failure Reason'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['failure_reason']
+            return(status_details)
 ######       End of ISE functions      ######
 
         
