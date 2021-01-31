@@ -225,8 +225,8 @@ def add_voucher(mac_address: str, duration: int):
             update_ise_endpoint_group(mac, voucher_group_name)
             # Update the voucher file
             voucher_json = read_voucher_json()
-            print(f"Adding MAC {mac} with a duration of {duration} minutes to the voucher list")
-            voucher_json[mac] = time() + duration
+            print(f"Adding MAC {mac} with a duration of {duration} hours to the voucher list")
+            voucher_json[mac] = time() + duration*60*60
             with open('voucher.json', 'w') as f:
                 json.dump(voucher_json, f)
             return("Done")
