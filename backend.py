@@ -5,6 +5,7 @@ from genie.testbed import load
 from requests.auth import HTTPBasicAuth
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+from genie.metaparser.util.exceptions import SchemaEmptyParserError
 
 ######   Setting up the environment ######
 ise_user = os.environ.get('ISE_USER', "admin")
@@ -78,9 +79,12 @@ def update_ise_endpoint_group(mac_address:str, group_name:str):
     print(f"ISE endpoint group name: {group_name}, id: {ise_group_id}")
     if ise_group_id != "ERROR":
         url = base_url + "endpoint/name/" + mac_address
-        endpoint_id = requests.get(url=url, auth=auth, headers=headers, 
-            verify=False).json()["ERSEndPoint"]["id"]
-        print(f"ISE endpoint {mac_address}, id: {endpoint_id}")
+        try:
+            endpoint_id = requests.get(url=url, auth=auth, headers=headers, 
+                verify=False).json()["ERSEndPoint"]["id"]
+            print(f"ISE endpoint {mac_address}, id: {endpoint_id}")
+        except:
+            print(f"Endpoint {mac_address} wasn't found.")
         #
         url = base_url + "endpoint/" + endpoint_id
         data = ('{"ERSEndPoint": {"groupId": "%s","staticGroupAssignment": "true"}}' % ise_group_id)
@@ -166,23 +170,30 @@ def get_device_auth_sessions(device_ip: str):
     device = testbed.devices['device']
     try:
         device.connect(via='cli', learn_hostname=True)
-        auth_sessions = device.parse('show authentication sessions')
-        relevant_sessions = []
-        for interface in auth_sessions['interfaces']:
-            for client in auth_sessions['interfaces'][interface]['client']:
-                if auth_sessions['interfaces'][interface]['client'][client]['domain'] != "UNKNOWN":
-                    session = { 'Interface': interface,
-                                'Endpoint MAC': client,
-                                'NIC Vendor': EUI(client).oui.registration()['org'],
-                                'Status': auth_sessions['interfaces'][interface]['client'][client]['status'],
-                                'Method': auth_sessions['interfaces'][interface]['client'][client]['method']
-                        }
-                    # TODO: Add failure reason, add IP address, add username...
-                    relevant_sessions.append(session)
-        return(relevant_sessions)
     except:
         print(f"ERROR: Problem connecting to {device_ip}...")
         return([f"ERROR: Problem connecting to {device_ip}..."])
+    try:
+        auth_sessions = device.parse('show authentication sessions')
+    except SchemaEmptyParserError:
+        print(f"No authentication sessions on {device_ip}.")
+        return([f"No authentication sessions on {device_ip}."])
+    except:
+        print(f"ERROR: Problem parsing information from {device_ip}.")
+        return([f"ERROR: Problem parsing information from {device_ip}."])
+    relevant_sessions = []
+    for interface in auth_sessions['interfaces']:
+        for client in auth_sessions['interfaces'][interface]['client']:
+            if auth_sessions['interfaces'][interface]['client'][client]['domain'] != "UNKNOWN":
+                session = { 'Interface': interface,
+                            'Endpoint MAC': client,
+                            'NIC Vendor': EUI(client).oui.registration()['org'],
+                            'Status': auth_sessions['interfaces'][interface]['client'][client]['status'],
+                            'Method': auth_sessions['interfaces'][interface]['client'][client]['method']
+                    }
+                # TODO: Add failure reason, add IP address, add username...
+                relevant_sessions.append(session)
+        return(relevant_sessions)
 
 
 def format_mac(mac_address:str):
