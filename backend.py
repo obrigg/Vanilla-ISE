@@ -124,7 +124,7 @@ def check_ise_auth_status(mac_address:str):
     mac = format_mac(mac_address)
     status_details = {}
     if mac != "ERROR":
-        url = "https://" + os.environ.get('ISE_IP', "") + "/admin/API/mnt/AuthStatus/MACAddress/" + mac + "/120/1/All"
+        url = "https://" + os.environ.get('ISE_IP', "") + "/admin/API/mnt/AuthStatus/MACAddress/" + mac + "/84600/1/All"
         response = requests.get(url=url, auth=auth, verify=False)
         if response.status_code == 200:
             status = xmltodict.parse(response.text)
@@ -273,3 +273,8 @@ def voucher_cleanup(voucher_group_name: str):
             print(f"Removing expired voucher for {mac}.")
             revoke_voucher(mac)
 
+
+if __name__ == "__main__":
+    print("\n\n\nThis file provides backend methods for Vanilla ISE's front-end coode.\
+        \nIt is not supposed to be run directly, but to be imported.\n\n")
+    x = input("Press any key to continue...")
