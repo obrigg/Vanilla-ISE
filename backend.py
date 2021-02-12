@@ -5,6 +5,7 @@ from genie.testbed import load
 from requests.auth import HTTPBasicAuth
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+from genie.metaparser.util.exceptions import SchemaEmptyParserError
 
 ######   Setting up the environment ######
 ise_user = os.environ.get('ISE_USER', "admin")
@@ -78,10 +79,13 @@ def update_ise_endpoint_group(mac_address:str, group_name:str):
     print(f"ISE endpoint group name: {group_name}, id: {ise_group_id}")
     if ise_group_id != "ERROR":
         url = base_url + "endpoint/name/" + mac_address
-        endpoint_id = requests.get(url=url, auth=auth, headers=headers, 
-            verify=False).json()["ERSEndPoint"]["id"]
-        print(f"ISE endpoint {mac_address}, id: {endpoint_id}")
-        #
+        try:
+            endpoint_id = requests.get(url=url, auth=auth, headers=headers, 
+                verify=False).json()["ERSEndPoint"]["id"]
+            print(f"ISE endpoint {mac_address}, id: {endpoint_id}")
+        except:
+            print(f"ERROR: Endpoint {mac_address} wasn't found.") 
+            #
         url = base_url + "endpoint/" + endpoint_id
         data = ('{"ERSEndPoint": {"groupId": "%s","staticGroupAssignment": "true"}}' % ise_group_id)
         response = requests.put(url=url, data=data, auth=auth, headers=headers, verify=False)
@@ -124,25 +128,25 @@ def check_ise_auth_status(mac_address:str):
     mac = format_mac(mac_address)
     status_details = {}
     if mac != "ERROR":
-        url = "https://" + os.environ.get('ISE_IP', "") + "/admin/API/mnt/AuthStatus/MACAddress/" + mac + "/120/1/All"
+        url = "https://" + os.environ.get('ISE_IP', "") + "/admin/API/mnt/AuthStatus/MACAddress/" + mac + "/84600/1/All"
         response = requests.get(url=url, auth=auth, verify=False)
         if response.status_code == 200:
             status = xmltodict.parse(response.text)
             if status['authStatusOutputList']['authStatusList']['authStatusElements']['passed']['#text'] == "true":
                 status_details['Status'] = "Success"
-                status_details['MAC Address'] = status['authStatusOutputList']['authStatusList']['@key']
+                status_details['MACAddress'] = status['authStatusOutputList']['authStatusList']['@key']
                 status_details['NAD'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['network_device_name']
                 status_details['Interface'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['nas_port_id']
-                status_details['Auth Method'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['authentication_method']
+                status_details['AuthMethod'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['authentication_method']
                 status_details['Username'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['user_name']
             else:
                 status_details['Status'] = "Failure"
-                status_details['MAC Address'] = status['authStatusOutputList']['authStatusList']['@key']
+                status_details['MACAddress'] = status['authStatusOutputList']['authStatusList']['@key']
                 status_details['NAD'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['network_device_name']
                 status_details['Interface'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['nas_port_id']
-                status_details['Auth Method'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['authentication_method']
+                status_details['AuthMethod'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['authentication_method']
                 status_details['Username'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['user_name']
-                status_details['Failure Reason'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['failure_reason']
+                status_details['FailureReason'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['failure_reason']
             return(status_details)
 ######       End of ISE functions      ######
 
@@ -165,24 +169,31 @@ def get_device_auth_sessions(device_ip: str):
     testbed = load(testbed_input)
     device = testbed.devices['device']
     try:
-        device.connect(via='cli', learn_hostname=True)
-        auth_sessions = device.parse('show authentication sessions')
-        relevant_sessions = []
-        for interface in auth_sessions['interfaces']:
-            for client in auth_sessions['interfaces'][interface]['client']:
-                if auth_sessions['interfaces'][interface]['client'][client]['domain'] != "UNKNOWN":
-                    session = { 'Interface': interface,
-                                'Endpoint MAC': client,
-                                'NIC Vendor': EUI(client).oui.registration()['org'],
-                                'Status': auth_sessions['interfaces'][interface]['client'][client]['status'],
-                                'Method': auth_sessions['interfaces'][interface]['client'][client]['method']
-                        }
-                    # TODO: Add failure reason, add IP address, add username...
-                    relevant_sessions.append(session)
-        return(relevant_sessions)
+        device.connect(via='cli', learn_hostname=True)    
     except:
         print(f"ERROR: Problem connecting to {device_ip}...")
         return([f"ERROR: Problem connecting to {device_ip}..."])
+    try:
+        auth_sessions = device.parse('show authentication sessions')
+    except SchemaEmptyParserError:
+        print(f"ERROR: No authentication sessions on {device_ip}.")
+        return([f"ERROR: No authentication sessions on {device_ip}."])
+    except:
+        print(f"ERROR: Problem parsing information from {device_ip}.")
+        return([f"ERROR: Problem parsing information from {device_ip}."])
+    relevant_sessions = []
+    for interface in auth_sessions['interfaces']:
+        for client in auth_sessions['interfaces'][interface]['client']:
+            if auth_sessions['interfaces'][interface]['client'][client]['domain'] != "UNKNOWN":
+                session = { 'Interface': interface,
+                            'EndpointMAC': client,
+                            'NICVendor': EUI(client).oui.registration()['org'],
+                            'Status': auth_sessions['interfaces'][interface]['client'][client]['status'],
+                            'Method': auth_sessions['interfaces'][interface]['client'][client]['method']
+                    }
+                # TODO: Add failure reason, add IP address, add username...
+                relevant_sessions.append(session)
+        return(relevant_sessions)
 
 
 def format_mac(mac_address:str):
@@ -226,12 +237,13 @@ def add_voucher(mac_address: str, duration: int):
             # Update the voucher file
             voucher_json = read_voucher_json()
             print(f"Adding MAC {mac} with a duration of {duration} hours to the voucher list")
-            voucher_json[mac] = time() + duration*60*60
+            voucher_json[mac] = time() + duration*60*60            
             with open('voucher.json', 'w') as f:
                 json.dump(voucher_json, f)
             return("Done")
         except:
             print(f"ERROR: Wasn't able to add {mac} to the voucher list")
+            return(f"ERROR: Wasn't able to add {mac} to the voucher list")
     else:
         return("ERROR")
 
@@ -273,3 +285,8 @@ def voucher_cleanup(voucher_group_name: str):
             print(f"Removing expired voucher for {mac}.")
             revoke_voucher(mac)
 
+
+if __name__ == "__main__":
+    print("\n\n\nThis file provides backend methods for Vanilla ISE's front-end coode.\
+        \nIt is not supposed to be run directly, but to be imported.\n\n")
+    x = input("Press any key to continue...")

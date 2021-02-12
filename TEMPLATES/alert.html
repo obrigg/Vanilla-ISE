@@ -1,0 +1,13 @@
+<!--Helper Template: Alert for error message-->
+{% if error == True %}  
+    <div class="alert alert--danger" role="alert">
+        <div class="alert__icon icon-error-outline"></div>
+        <div class="alert__message">
+            An error has occurred. (Details: {{ errorcode }})
+            {% if reloadlink %}  
+                </br>
+                <a href="{{reloadlink}}">Reload page</a>
+            {% endif %}
+        </div>
+    </div>                 
+{% endif %}

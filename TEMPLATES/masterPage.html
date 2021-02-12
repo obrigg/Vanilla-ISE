@@ -1,0 +1,74 @@
+<!-- This page is the master page for all template pages that are part of this frontend. 
+    It provides the header and footer element for every other page.-->
+
+<!doctype html>
+<html id="styleguide" class="" lang="en">
+        
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">  
+                            
+        <title>Vanilla ISE</title>
+        
+        <link rel="stylesheet" href="{{ url_for('static', filename='CSS/cui-standard.css') }}">
+        <link rel="icon" href="{{ url_for('static', filename='IMAGES/Logo_small_blue.png')}}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='CSS/customStyles.css') }}">
+        <script src="https://code.jquery.com/jquery-3.0.0.min.js" integrity="sha256-JmvOoLtYsmqlsWxa7mDSLMwa6dZ9rrIdtrrVYRnDRH0=" crossorigin="anonymous"></script>
+        <script src="{{ url_for('static', filename='JS/styleguide.js') }}"></script>
+        <script src="{{ url_for('static', filename='JS/loader.js') }}"></script>
+    </head>
+
+    <body class="cui">  
+          
+             <!-- Header -->
+            <nav class="header" id="styleguideheader" role="navigation">
+                <div class="container-fluid">
+                    <div class="header-panels">
+                        <!--Cisco logo and title area (left)-->
+                        <div class="header-panel">
+                            <a class="header-bar__logo header__logo" href="https://cisco.com/" target="_blank">
+                                <span id="header-logo" class="icon-cisco"></span>
+                            </a>
+                            <h1 class="header__title">Vanilla ISE</h1>
+                        </div>
+                        <!--Center area (middle)-->
+                        <div class="header-panel header-panel--center">
+                        </div>
+                        <!--Link area (right)-->
+                        <div class="header-panel header-panel--right"> 
+                        </div>  
+                    </div>
+                </div>
+            </nav>
+  
+            <!--Content-->
+            <div class="content content--alt">
+                <div class="container-fluid">                
+    
+                        {% block content %}
+
+                        {% endblock %}
+                        
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <footer class="footer">
+                <div class="footer__links">
+                    <ul class="list list--inline">
+                        <li><a href="https://gve-devnet.cisco.com/"><img id="footer-link-gve-devnet" src="{{ url_for('static', filename='IMAGES/Logo_long_blue.png')}}"></a></li>
+                        <li><a href="http://www.cisco.com/cisco/web/siteassets/contacts/index.html" target="_blank">Contacts</a></li>
+                        <li><a href="https://secure.opinionlab.com/ccc01/o.asp?id=jBjOhqOJ" target="_blank">Feedback</a></li>
+                        <li><a href="https://www.cisco.com/c/en/us/about/help.html" target="_blank">Help</a></li>
+                        <li><a href="https://www.cisco.com/c/en/us/about/legal/terms-conditions.html" target="_blank">Terms & Conditions</a></li></li>
+                        <li><a href="https://www.cisco.com/c/en/us/about/legal/privacy-full.html" target="_blank">Privacy Statement</a></li>
+                        <li><a href="https://www.cisco.com/c/en/us/about/legal/privacy-full.html#cookies" target="_blank">Cookie Policy</a></li>
+                        <li><a href="https://www.cisco.com/c/en/us/about/legal/trademarks.html" target="_blank">Trademarks</a></li>
+                    </ul>
+                </div>
+            </footer>
+        </body>
+    </html>
+    

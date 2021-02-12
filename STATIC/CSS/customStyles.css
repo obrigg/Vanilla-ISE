@@ -1,0 +1,119 @@
+        
+/*Masterpage*/
+    #footer-link-meraki{
+        height: 15px;
+    }
+    #footer-link-gve-devnet{
+        height: 30px;
+        bottom: 4px;
+        position: relative;
+    }
+    #time_location_note{
+        color: var(--cui-color-gray-500);
+        padding-top: 5px;
+        text-align: center;
+        font-size: var(--cui-font-size-sm);
+    }
+    /*Position footer at bottom. Even with less content.*/
+    .cui .content{
+        min-height: 93vh;
+    }
+    body.cui footer, body.cui .footer{
+        margin-top: 0;
+    }
+    /*Header*/
+    #header-logo{
+        font-size: 23px;
+    }
+
+/*Login*/  
+    .required-label{
+        color: var(--cui-form-label-color);
+    }    
+    #customer-logo{
+        height:55px;
+        margin-bottom: 10px;
+    }
+
+/*Left Menu*/
+.cui .sidebar{
+    padding-top: 30px;
+}
+
+/*Charts from chart.js*/
+.chartjs-render-monitor{
+    background-color: white;
+    padding: 10px;
+}
+
+/*list groups*/
+.list-group{
+    padding-left: 0 !important;
+}
+
+.list-group-item{
+    list-style-type: none;
+}
+
+.list-group-item .btn--link{
+    padding-left: 0;
+    padding-right: 0;
+    text-align: left;
+}
+
+/*table*/
+.cui .responsive-table{
+    width: 100%;
+}
+
+.link_btn{
+    padding-left: 0 !important;
+}
+
+
+/*form fields*/
+.cui .form-group .form-group__text input, .cui .form-group .form-group__text select, .cui .form-group .form-group__text textarea{
+    background: white;
+}
+
+/*No Query hint*/
+.no_query{
+    padding: 50px;
+    text-align: center;
+}
+
+/*Headlines*/
+.headline{
+    margin-bottom: 20px;
+}
+
+/*List groups*/
+ul.list-group{
+    margin: 20px 6px;
+    line-height: 30px;
+}
+
+.bold{
+    font-weight: bold;
+}
+
+/*table column widths*/
+.w-33{
+    width: 33.3%;
+}
+
+.w-20{
+    width: 20%;
+}
+
+.w-16{
+    width: 16.6%;
+}
+
+.w-50{
+    width: 50%;
+}
+
+.btn{
+    white-space:nowrap !important;
+}

@@ -1,0 +1,138 @@
+<!-- This page shows an empty page with MAC address query field and button 
+    or a list of queried endpoint devices with associated auth status. -->
+
+{% extends "masterPage.html" %}
+
+{% block content %}
+<div class="row">
+
+    <!-- Left Rail -->
+    {% include "menu.html" %}
+
+    <!-- Middle + Right Rail -->
+    <div class="col-9 col-xl-10 col-md-9">
+        <div class="section">
+            
+            <div class="headline">
+                <h2>Vouchers</h2>
+            </div>
+
+            <!--Alert for error message-->
+            {% include "alert.html" %}
+
+            {%if new_voucher%}
+                <div class="alert alert--success">
+                    <div class="alert__icon icon-check-outline"></div>
+                    <div class="alert__message">New voucher successfully added!</div>
+                </div>
+            {% endif %}
+
+            {%if deleted_voucher%}
+                <div class="alert alert--success">
+                    <div class="alert__icon icon-check-outline"></div>
+                    <div class="alert__message">Voucher successfully deleted!</div>
+                </div>
+            {% endif %}
+
+            <button type="button" class="btn" onclick="openModal('modal-small')"
+                style="float:right;">Add Voucher</button>
+            
+            <!--Voucher list-->
+            {%if voucher_list %}
+                <form id="voucher_revoke_form" action="/voucher" method="POST">
+
+                    <div class="responsive-table">
+                        <table class="table table--lined table--selectable table">
+                            <thead>
+                                <tr>
+                                    <th class="w-33">MAC Address</span></th>
+                                    <th class="w-33">Expiration Date</th>
+                                    <th class="w-33">Revoke</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+
+                                {% for voucher in voucher_list %}
+                                <tr>
+                                    <td>
+                                        {{voucher.MACAddress}}
+                                    </td>
+                                    <td>
+                                        {{voucher.ExpDate}}
+                                    </td>
+                                    <td>
+                                        <button name="voucher_sumbit" value="{{voucher.MACAddress}}"
+                                            class="btn btn--link link_btn" type="submit" onclick="showLoadingText(this)"
+                                            onload="showOriginalText(this, 'Revoke')">Revoke</button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+
+                            </tbody>
+                        </table>
+                    </div>
+                </form>
+                
+            {% else %}
+                <div class="no_query">No vouchers available yet.</div>
+            {% endif %}
+
+
+            <!--Add Voucher Modal-->
+            <div class="modal modal--small hide" id="modal-small">
+                <div class="modal__dialog">
+                    <div class="modal__content">
+                        <a class="modal__close" onclick="closeModal('modal-small')"><span class="icon-close"></span></a>
+                        
+                        <div class="modal__header">
+                            <div class="modal__title">Add Voucher</div>
+                        </div>
+                        
+                        <div class="modal__body">
+                            <p class="subtitle">
+
+                                <form id="voucher_add_form" action="/voucher" method="POST">
+
+                                    <div class="form-group">
+                                        <div class="form-group__text">
+                                            <input type="text" value="{{mac_address}}"
+                                                name="mac_address_field" required 
+                                                pattern="^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$">
+                                            <label for="input-layout-inline-1">MAC Address</label>
+                                        </div>
+                                        <div class="help-block" role="alert">
+                                            <span>Format: xx:xx:xx:xx:xx:xx</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <div class="form-group base-margin-bottom base-margin-top">
+                                            <div class="form-group__text select">
+                                                <select name="voucher_duration" id="select-type-basic">
+                                                    <option value="2">2 Hours</option>
+                                                    <option value="8">8 Hours</option>
+                                                    <option value="48">48 Hours</option>
+                                                </select>
+                                                <label for="select-type-basic">Duration</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <button value="Add" name="voucher_sumbit" class="btn btn--primary" type="submit"
+                                            onclick="showLoadingText(this)"
+                                            onload="showOriginalText(this, 'Add')">Add</button>
+                                    </div>
+                                </form>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}
