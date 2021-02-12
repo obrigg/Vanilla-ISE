@@ -25,22 +25,21 @@ Using Cisco ISE's open APIs, primarily ERS (External RESTful Services), we have 
 * Grant and revoke network access "vouchers".
 
 
-## How to run the script on Docker:
+## Running vanilla ISE:
 
-There are several options for running this script:
+There are several options for running vanilla ISE:
 1. Running the code on a computer/server with Python. Probably the easiest, but a waste of resources.
 2. Running the code on a Docker container. Requires to <a href="https://docs.docker.com/get-docker/"> install Docker</a>.
 3. Running the code on a Cisco device using Guestshell (Cisco Guestshell is a virtualized Linux-based environment, designed to run custom Linux applications, including Python for automated control and management of Cisco devices). See details below.
 
-
 ### Enable ISE ERS API
 
-The ISE REST APIs - also known as External RESTful Services (ERS) - are disabled by default for security. You must enable it:
+The ISE REST APIs (AKA External RESTful Services or ERS) are disabled by default for security. You must enable it:
 1. Login to your ISE PAN using the admin or other SuperAdmin user.
-2. Navigate to Administration > System > Settings and select ERS Settings from the left panel.
-4. Enable the ERS APIs by selecting Enable ERS for Read/Write
+2. Navigate to **Administration** > **System** > **Settings** and select **ERS Settings** from the left panel.
+4. Enable the ERS APIs by selecting **Enable ERS for Read/Write**
 5. Do not enable CSRF unless you know how to use the tokens.
-6. Select Save to save your changes.
+6. Select **Save** to save your changes.
 
 Note: its good practice to disable CSRF to make sure you are able to authenticate successfully.
 
@@ -57,13 +56,13 @@ SWITCH_ENABLE= <enable password for network devices>
 ```
 
 ### Create a Docker image
-`docker build -t ise_to_mail .`
+`docker build -t vanilla_ise .`
 
 ### Run the Docker
-`docker run -d --env-file <path to env file> -v <path to data dir>:/Cisco-ISE-Email-Notifications/data ise_to_mail`
+`docker run -d --env-file <path to env file> -v <path to data dir>:/Cisco-ISE-Email-Notifications/data vanilla_ise`
 
 running the Docker in interactive mode:
-`docker run -ti --env-file <path to env file> -v <path to data dir>:/Cisco-ISE-Email-Notifications/data ise_to_mail`
+`docker run -ti --env-file <path to env file> -v <path to data dir>:/Cisco-ISE-Email-Notifications/data vanilla_ise`
 
 
 ## Screenshots:

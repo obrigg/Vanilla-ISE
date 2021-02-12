@@ -84,7 +84,7 @@ def update_ise_endpoint_group(mac_address:str, group_name:str):
                 verify=False).json()["ERSEndPoint"]["id"]
             print(f"ISE endpoint {mac_address}, id: {endpoint_id}")
         except:
-            print(f"ERROR: Endpoint {mac_address} wasn't found.") 
+            print(f"Endpoint {mac_address} wasn't found.") 
             #
         url = base_url + "endpoint/" + endpoint_id
         data = ('{"ERSEndPoint": {"groupId": "%s","staticGroupAssignment": "true"}}' % ise_group_id)
