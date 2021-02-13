@@ -2,7 +2,7 @@
 #### Your endpoint specialists' go-to UI <img src="img/ISE logo.png">
 ## The Challenge
 
-Cisco ISE (Identity Services Engine) is THE policy engine for your network. It provides many (many) different services that are all required to meet today's user expectations while protecting the organization from threats:
+Cisco ISE (Identity Services Engine) is **THE** policy engine for your network. It provides many (many) different services that are all required to meet today's user expectations while protecting the organization from threats:
 * TACACS/Radius for central management of networking equipment.
 * Network Admission Control (NAC) identifying endpoints as they connect to the network (both wired and wireless).
 * Group-based Policy using Cisco TrustSec.
@@ -20,15 +20,20 @@ A specific capability asked by endpoint teams is the concept of a "voucher": a t
 Using Cisco ISE's open APIs, primarily ERS (External RESTful Services), we have created "Vanilla ISE": a simple UI for endpoint technicians and helpdesk representatives.
 
 ### Vanilla ISE's Capabilities:
+* List the network access devices configured on ISE.
+<img src="img/device list.png">
 * Query a network device for current authentication sessions.
+<img src="img/device query.png">
 * Query a specific endpoint for details (status, NAD's IP and interface, authentication mechanism, username, and failure reason - if failed)
+<img src="img/endpoint query.png">
 * Grant and revoke network access "vouchers".
-
+<img src="img/voucher list.png">
+<img src="img/add voucher.png">
 
 ## Running vanilla ISE:
 
 There are several options for running vanilla ISE:
-1. Running the code on a computer/server with Python. Probably the easiest, but a waste of resources.
+1. Running the code on a computer/server with Python.
 2. Running the code on a Docker container. Requires to <a href="https://docs.docker.com/get-docker/"> install Docker</a>.
 3. Running the code on a Cisco device using Guestshell (Cisco Guestshell is a virtualized Linux-based environment, designed to run custom Linux applications, including Python for automated control and management of Cisco devices). See details below.
 
@@ -56,17 +61,13 @@ SWITCH_ENABLE= <enable password for network devices>
 ```
 
 ### Create a Docker image
-`docker build -t vanilla_ise .`
+`docker build -t vanilla-ise .`
 
 ### Run the Docker
-`docker run -d --env-file <path to env file> -v <path to data dir>:/Cisco-ISE-Email-Notifications/data vanilla_ise`
+`docker run -d --env-file <path to env file> -v <path to data dir>:/vanilla-ise/data vanilla-ise`
 
 running the Docker in interactive mode:
-`docker run -ti --env-file <path to env file> -v <path to data dir>:/Cisco-ISE-Email-Notifications/data vanilla_ise`
-
-
-## Screenshots:
-
+`docker run -ti --env-file <path to env file> -v <path to data dir>:/vanilla-ise/data vanilla_ise`
 
 ----
 ### Licensing info
