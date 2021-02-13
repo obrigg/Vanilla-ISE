@@ -124,30 +124,37 @@ def initialize_ise():
 def check_ise_auth_status(mac_address:str):
     '''
     This function will return the authentication status of a given endpoint.
+    Assumption: there was an authentication event during the last 24 hours.
     '''
+    duration = 86400 # 24 hours
     mac = format_mac(mac_address)
     status_details = {}
     if mac != "ERROR":
-        url = "https://" + os.environ.get('ISE_IP', "") + "/admin/API/mnt/AuthStatus/MACAddress/" + mac + "/84600/1/All"
+        url = "https://" + os.environ.get('ISE_IP', "") + "/admin/API/mnt/AuthStatus/MACAddress/" + mac + "/" + str(duration) + "/1/All"
         response = requests.get(url=url, auth=auth, verify=False)
-        if response.status_code == 200:
-            status = xmltodict.parse(response.text)
-            if status['authStatusOutputList']['authStatusList']['authStatusElements']['passed']['#text'] == "true":
-                status_details['Status'] = "Success"
-                status_details['MACAddress'] = status['authStatusOutputList']['authStatusList']['@key']
-                status_details['NAD'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['network_device_name']
-                status_details['Interface'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['nas_port_id']
-                status_details['AuthMethod'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['authentication_method']
-                status_details['Username'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['user_name']
+        if response.status_code != 200:
+            return(f"ERROR: Response status code is {response.status_code}.")
+        else:
+            if response.text.rfind("authStatusElements") == -1:
+                return(f"ERROR: No authentication events for MAC Address {mac} during the last {duration/3600} hours.")
             else:
-                status_details['Status'] = "Failure"
-                status_details['MACAddress'] = status['authStatusOutputList']['authStatusList']['@key']
-                status_details['NAD'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['network_device_name']
-                status_details['Interface'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['nas_port_id']
-                status_details['AuthMethod'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['authentication_method']
-                status_details['Username'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['user_name']
-                status_details['FailureReason'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['failure_reason']
-            return(status_details)
+                status = xmltodict.parse(response.text)
+                if status['authStatusOutputList']['authStatusList']['authStatusElements']['passed']['#text'] == "true":
+                    status_details['Status'] = "Success"
+                    status_details['MACAddress'] = status['authStatusOutputList']['authStatusList']['@key']
+                    status_details['NAD'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['network_device_name']
+                    status_details['Interface'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['nas_port_id']
+                    status_details['AuthMethod'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['authentication_method']
+                    status_details['Username'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['user_name']
+                else:
+                    status_details['Status'] = "Failure"
+                    status_details['MACAddress'] = status['authStatusOutputList']['authStatusList']['@key']
+                    status_details['NAD'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['network_device_name']
+                    status_details['Interface'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['nas_port_id']
+                    status_details['AuthMethod'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['authentication_method']
+                    status_details['Username'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['user_name']
+                    status_details['FailureReason'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['failure_reason']
+                return(status_details)
 ######       End of ISE functions      ######
 
         
@@ -193,7 +200,7 @@ def get_device_auth_sessions(device_ip: str):
                     }
                 # TODO: Add failure reason, add IP address, add username...
                 relevant_sessions.append(session)
-        return(relevant_sessions)
+    return(relevant_sessions)
 
 
 def format_mac(mac_address:str):
