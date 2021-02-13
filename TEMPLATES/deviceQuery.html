@@ -39,13 +39,16 @@
                     <table class="table table--lined table--selectable table">
                         <thead>
                             <tr>
-                                <th class="w-15">Interface</span></th>
-                                <th class="w-15">Endpoint MAC</th>
-                                <th class="w-10">Status</th>
-                                <th class="w-15">Method</th>
-                                <th class="w-15">IPv4 Address</th>
-                                <th class="w-15">Username</th>
-                                <th class="w-15">NIC Vendor</th>
+                                <th class="w-20">Interface</span></th>
+                                <th class="w-10">Endpoint MAC</th>
+                                <th class="w-5">Status</th>
+                                <th class="w-10">Method</th>
+                                <th class="w-10">Username</th>
+                                <th class="w-10">IPv4 Address</th>
+                                <th class="w-5">Vlan</th>
+                                <th class="w-5">SGT</th>
+                                <th class="w-10">IPv4 ACL</th>
+                                <th class="w-10">NIC Vendor</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -65,10 +68,19 @@
                                         <span>{{session.Method}}</span>
                                     </td>
                                     <td>
+                                        <span>{{session.Username}}</span>
+                                    </td>
+                                    <td>
                                         <span>{{session.IPv4}}</span>
                                     </td>
                                     <td>
-                                        <span>{{session.Username}}</span>
+                                        <span>{{session.Vlan}}</span>
+                                    </td>
+                                    <td>
+                                        <span>{{session.SGT}}</span>
+                                    </td>
+                                    <td>
+                                        <span>{{session.IPv4ACL}}</span>
                                     </td>
                                     <td>
                                         <span>{{session.NICVendor}}</span>

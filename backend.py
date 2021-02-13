@@ -202,11 +202,23 @@ def get_device_auth_sessions(device_ip: str):
                             'EndpointMAC': client,
                             'Status': auth_sessions['interfaces'][interface]['client'][client]['status'],
                             'Method': auth_sessions['interfaces'][interface]['client'][client]['method'],
-                            'IPv4': auth_details['interfaces'][interface]['mac_address'][client]['ipv4_address'],
                             'Username': auth_details['interfaces'][interface]['mac_address'][client]['user_name'],
+                            'IPv4': auth_details['interfaces'][interface]['mac_address'][client]['ipv4_address'],
+                            'Vlan': auth_details['interfaces'][interface]['mac_address'][client]['local_policies']['vlan_group']['vlan'],
                             'NICVendor': EUI(client).oui.registration()['org']                            
                     }
-                # TODO: Add failure reason, add IP address, add username...
+                try:
+                    if "server_policies" in auth_details['interfaces'][interface]['mac_address'][client]:
+                        server_policies = auth_details['interfaces'][interface]['mac_address'][client]['server_policies']
+                        for policy in server_policies:
+                            if server_policies[policy]['name'] == 'SGT Value':
+                                session['SGT'] = server_policies[policy]['policies']
+                            elif server_policies[policy]['name'] == 'ACS ACL IPV6':
+                                session['IPv6ACL'] = server_policies[policy]['policies']
+                            elif server_policies[policy]['name'] == 'ACS ACL':
+                                session['IPv4ACL'] = server_policies[policy]['policies']
+                except:
+                    pass
                 relevant_sessions.append(session)
     return(relevant_sessions)
 
