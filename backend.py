@@ -146,6 +146,9 @@ def check_ise_auth_status(mac_address:str):
                     status_details['Interface'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['nas_port_id']
                     status_details['AuthMethod'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['authentication_method']
                     status_details['Username'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['user_name']
+                    status_details['IdentityGroup'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['identity_group']
+                    status_details['SGT'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['cts_security_group']
+                    status_details['FailureReason'] = "None"
                 else:
                     status_details['Status'] = "Failure"
                     status_details['MACAddress'] = status['authStatusOutputList']['authStatusList']['@key']
@@ -154,6 +157,8 @@ def check_ise_auth_status(mac_address:str):
                     status_details['AuthMethod'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['authentication_method']
                     status_details['Username'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['user_name']
                     status_details['FailureReason'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['failure_reason']
+                    status_details['IdentityGroup'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['identity_group']
+                    status_details['SGT'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['cts_security_group']
                 return(status_details)
 ######       End of ISE functions      ######
 
