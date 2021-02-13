@@ -1,5 +1,6 @@
-<img src="img/vanilla ISE.png">
 # Vanilla ISE
+<img src="img/vanilla ISE.png">
+
 #### Your endpoint specialists' go-to UI
 ## The Challenge
 
