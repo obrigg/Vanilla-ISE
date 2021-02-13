@@ -1,7 +1,5 @@
-
 flask
 requests
 xmltodict
 netaddr
-genie
-pyats
+pyats[library]
