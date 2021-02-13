@@ -192,11 +192,14 @@ def get_device_auth_sessions(device_ip: str):
     for interface in auth_sessions['interfaces']:
         for client in auth_sessions['interfaces'][interface]['client']:
             if auth_sessions['interfaces'][interface]['client'][client]['domain'] != "UNKNOWN":
+                auth_details = device.parse(f"show authentication sessions interface {interface} details")
                 session = { 'Interface': interface,
                             'EndpointMAC': client,
-                            'NICVendor': EUI(client).oui.registration()['org'],
                             'Status': auth_sessions['interfaces'][interface]['client'][client]['status'],
-                            'Method': auth_sessions['interfaces'][interface]['client'][client]['method']
+                            'Method': auth_sessions['interfaces'][interface]['client'][client]['method'],
+                            'IPv4': auth_details['interfaces'][interface]['mac_address'][client]['ipv4_address'],
+                            'Username': auth_details['interfaces'][interface]['mac_address'][client]['user_name'],
+                            'NICVendor': EUI(client).oui.registration()['org']                            
                     }
                 # TODO: Add failure reason, add IP address, add username...
                 relevant_sessions.append(session)

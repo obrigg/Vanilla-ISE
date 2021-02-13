@@ -39,11 +39,13 @@
                     <table class="table table--lined table--selectable table">
                         <thead>
                             <tr>
-                                <th class="w-20">Interfaces</span></th>
-                                <th class="w-20">Endpoint MAC</th>
-                                <th class="w-20">NIC Vendor</th>
-                                <th class="w-20">Status</th>
-                                <th class="w-20">Method</th>
+                                <th class="w-15">Interface</span></th>
+                                <th class="w-15">Endpoint MAC</th>
+                                <th class="w-10">Status</th>
+                                <th class="w-15">Method</th>
+                                <th class="w-15">IPv4 Address</th>
+                                <th class="w-15">Username</th>
+                                <th class="w-15">NIC Vendor</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -52,19 +54,24 @@
                                 <tr>
                                     <td>
                                         <span>{{session.Interface}}</span>
-
                                     </td>
                                     <td>
                                         <span>{{session.EndpointMAC}}</span>
-                                    </td>
-                                    <td>
-                                        <span>{{session.NICVendor}}</span>
                                     </td>
                                     <td>
                                         <span>{{session.Status}}</span>
                                     </td>
                                     <td>
                                         <span>{{session.Method}}</span>
+                                    </td>
+                                    <td>
+                                        <span>{{session.IPv4}}</span>
+                                    </td>
+                                    <td>
+                                        <span>{{session.Username}}</span>
+                                    </td>
+                                    <td>
+                                        <span>{{session.NICVendor}}</span>
                                     </td>
                                 </tr>
                             {% endfor %}
