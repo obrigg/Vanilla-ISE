@@ -130,6 +130,11 @@ def check_ise_auth_status(mac_address:str):
     mac = format_mac(mac_address)
     status_details = {}
     if mac != "ERROR":
+        # URL explanation: https://<ISE>/admin/API/mnt/AuthStatus/MACAddress/
+        # <endpoint's MAC address>/
+        # <duration in seconds>/
+        # <number of records>/
+        # <"All" or "0" determies if the output is full or filtered>
         url = "https://" + os.environ.get('ISE_IP', "") + "/admin/API/mnt/AuthStatus/MACAddress/" + mac + "/" + str(duration) + "/1/All"
         response = requests.get(url=url, auth=auth, verify=False)
         if response.status_code != 200:
