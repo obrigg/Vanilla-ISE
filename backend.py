@@ -139,26 +139,24 @@ def check_ise_auth_status(mac_address:str):
                 return(f"ERROR: No authentication events for MAC Address {mac} during the last {duration/3600} hours.")
             else:
                 status = xmltodict.parse(response.text)
+                status_details['MACAddress'] = status['authStatusOutputList']['authStatusList']['@key']
+                status_details['NAD'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['network_device_name']
+                status_details['Interface'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['nas_port_id']
+                status_details['AuthMethod'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['authentication_method']
+                status_details['Username'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['user_name']
+                status_details['IdentityGroup'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['identity_group']
+                # Mention failure reason (if failed, or "none" is succeeded)
                 if status['authStatusOutputList']['authStatusList']['authStatusElements']['passed']['#text'] == "true":
                     status_details['Status'] = "Success"
-                    status_details['MACAddress'] = status['authStatusOutputList']['authStatusList']['@key']
-                    status_details['NAD'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['network_device_name']
-                    status_details['Interface'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['nas_port_id']
-                    status_details['AuthMethod'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['authentication_method']
-                    status_details['Username'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['user_name']
-                    status_details['IdentityGroup'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['identity_group']
-                    status_details['SGT'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['cts_security_group']
                     status_details['FailureReason'] = "None"
                 else:
                     status_details['Status'] = "Failure"
-                    status_details['MACAddress'] = status['authStatusOutputList']['authStatusList']['@key']
-                    status_details['NAD'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['network_device_name']
-                    status_details['Interface'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['nas_port_id']
-                    status_details['AuthMethod'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['authentication_method']
-                    status_details['Username'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['user_name']
                     status_details['FailureReason'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['failure_reason']
-                    status_details['IdentityGroup'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['identity_group']
+                # Add SGT, if exists
+                if 'cts_security_group' in status['authStatusOutputList']['authStatusList']['authStatusElements'].keys():
                     status_details['SGT'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['cts_security_group']
+                else:
+                    status_details['SGT'] = "None"
                 return(status_details)
 ######       End of ISE functions      ######
 
@@ -240,11 +238,11 @@ def format_mac(mac_address:str):
 def read_voucher_json():
     try:
         print("Reading the voucher list")
-        with open('voucher.json', 'r') as f:
+        with open('./data/voucher.json', 'r') as f:
             voucher_json = json.loads(f.read())
     except:
         print("Looks like the voucher list does not exist. Creating a new one...")
-        with open('voucher.json', 'w') as f:
+        with open('./data/voucher.json', 'w') as f:
             voucher_json = {}
             json.dump(voucher_json, f)
     return(voucher_json)
@@ -265,7 +263,7 @@ def add_voucher(mac_address: str, duration: int):
             voucher_json = read_voucher_json()
             print(f"Adding MAC {mac} with a duration of {duration} hours to the voucher list")
             voucher_json[mac] = time() + duration*60*60            
-            with open('voucher.json', 'w') as f:
+            with open('./data/voucher.json', 'w') as f:
                 json.dump(voucher_json, f)
             return("Done")
         except:
@@ -290,7 +288,7 @@ def revoke_voucher(mac_address: str):
         if mac in voucher_json:
             print(f"Deleting MAC {mac} from the voucher list")
             del voucher_json[mac]
-            with open('voucher.json', 'w') as f:
+            with open('./data/voucher.json', 'w') as f:
                 json.dump(voucher_json, f)
             return("Done")
         else:
