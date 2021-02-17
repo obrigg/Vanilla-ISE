@@ -207,10 +207,11 @@ def get_device_auth_sessions(device_ip: str):
                             'Method': auth_sessions['interfaces'][interface]['client'][client]['method'],
                             'Username': auth_details['interfaces'][interface]['mac_address'][client]['user_name'],
                             'IPv4': auth_details['interfaces'][interface]['mac_address'][client]['ipv4_address'],
-                            'Vlan': auth_details['interfaces'][interface]['mac_address'][client]['local_policies']['vlan_group']['vlan'],
                             'NICVendor': EUI(client).oui.registration()['org']                            
                     }
                 try:
+                    if "local_policies" in auth_details['interfaces'][interface]['mac_address'][client]:
+                        session['Vlan']: auth_details['interfaces'][interface]['mac_address'][client]['local_policies']['vlan_group']['vlan']
                     if "server_policies" in auth_details['interfaces'][interface]['mac_address'][client]:
                         server_policies = auth_details['interfaces'][interface]['mac_address'][client]['server_policies']
                         for policy in server_policies:
