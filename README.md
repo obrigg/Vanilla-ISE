@@ -58,9 +58,9 @@ Note: its good practice to disable CSRF to make sure you are able to authenticat
 ```
 ISE_IP= <ISE hostname/IP>
 ISE_USER= <ISE username>
-ISE_PASS= <ISE password>
+ISE_PASSWORD= <ISE password>
 SWITCH_USER= <username for network devices>
-SWITCH_USER= <password for network devices>
+SWITCH_PASS= <password for network devices>
 SWITCH_ENABLE= <enable password for network devices>
 ```
 
@@ -71,7 +71,7 @@ SWITCH_ENABLE= <enable password for network devices>
 `docker run -d --env-file <path to env file> -v <path to data dir>:/vanilla-ise/data vanilla-ise`
 
 running the Docker in interactive mode:
-`docker run -ti --env-file <path to env file> -v <path to data dir>:/vanilla-ise/data vanilla_ise`
+`docker run -ti --env-file <path to env file> -v <path to data dir>:/vanilla-ise/data vanilla-ise`
 
 ----
 ### Licensing info
