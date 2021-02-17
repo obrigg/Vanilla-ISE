@@ -5,7 +5,7 @@
 ## The Challenge
 
 Cisco ISE (Identity Services Engine) is **THE** policy engine for your network. It provides many (many) different services that are all required to meet today's user expectations while protecting the organization from threats:
-* TACACS/Radius for central management of networking equipment.
+* TACACS+/Radius for central management of networking equipment.
 * Network Admission Control (NAC) identifying endpoints as they connect to the network (both wired and wireless).
 * Group-based Policy using Cisco TrustSec.
 * VPN policy with Cisco ASA/FTD.
