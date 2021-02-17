@@ -1,0 +1,106 @@
+<!-- This page shows an empty page with IP query field and button 
+    or a list of queried devices with associated session information. -->
+
+{% extends "masterPage.html" %}
+
+{% block content %}
+<div class="row">
+
+    <!-- Left Rail -->
+    {% include "menu.html" %}
+
+    <!-- Middle + Right Rail -->
+    <div class="col-9 col-xl-10 col-md-9">
+        <div class="section">
+            
+            <div class="headline" class="flex-center-vertical">
+                <h2>Device Query</h2>
+            </div>
+
+            <!--Alert for error message-->
+            {% include "alert.html" %}
+
+            <form action="/deviceQuery" method="POST">
+
+                <div class="form-group form-group--inline">
+                    <div class="form-group__text">
+                        <input type="text" placeholder="IP address" value="{{ip_address}}"
+                            name="ip_address" required minlength="7" maxlength="15" size="15"
+                            pattern="^((\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$">
+                    </div>
+                    <button class="btn btn--primary" type="submit" onclick="showLoadingText(this)"
+                        onload="showOriginalText(this, 'Query Device')">Query
+                        Device</button>
+                </div>
+
+                {% if post_request_done %}
+
+                <div class="responsive-table">
+                    <table class="table table--lined table--selectable table">
+                        <thead>
+                            <tr>
+                                <th class="w-20">Interface</span></th>
+                                <th class="w-10">Endpoint MAC</th>
+                                <th class="w-5">Status</th>
+                                <th class="w-10">Method</th>
+                                <th class="w-10">Username</th>
+                                <th class="w-10">IPv4 Address</th>
+                                <th class="w-5">Vlan</th>
+                                <th class="w-5">SGT</th>
+                                <th class="w-10">IPv4 ACL</th>
+                                <th class="w-10">NIC Vendor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            {% for session in relevant_sessions %}
+                                <tr>
+                                    <td>
+                                        <span>{{session.Interface}}</span>
+                                    </td>
+                                    <td>
+                                        <span>{{session.EndpointMAC}}</span>
+                                    </td>
+                                    <td>
+                                        <span>{{session.Status}}</span>
+                                    </td>
+                                    <td>
+                                        <span>{{session.Method}}</span>
+                                    </td>
+                                    <td>
+                                        <span>{{session.Username}}</span>
+                                    </td>
+                                    <td>
+                                        <span>{{session.IPv4}}</span>
+                                    </td>
+                                    <td>
+                                        <span>{{session.Vlan}}</span>
+                                    </td>
+                                    <td>
+                                        <span>{{session.SGT}}</span>
+                                    </td>
+                                    <td>
+                                        <span>{{session.IPv4ACL}}</span>
+                                    </td>
+                                    <td>
+                                        <span>{{session.NICVendor}}</span>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+
+                        </tbody>
+                    </table>
+                </div>
+
+                {% else %}
+                    <div class="no_query">
+                        Please enter a IP address and press the button to execute a device query.
+                    </div>
+                {% endif %}
+
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

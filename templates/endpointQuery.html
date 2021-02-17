@@ -1,0 +1,60 @@
+<!-- This page shows a list of vouchers, allows to add new vouchers 
+    or revokes existing once. For better user experience the voucher data
+    is converted beforehand.  -->
+
+{% extends "masterPage.html" %}
+
+{% block content %}
+<div class="row">
+
+    <!-- Left Rail -->
+    {% include "menu.html" %}
+
+    <!-- Middle + Right Rail -->
+    <div class="col-9 col-xl-10 col-md-9">
+        <div class="section">
+            
+            <div class="headline">
+                <h2>Endpoint Query</h2>
+            </div>
+
+            <!--Alert for error message-->
+            {% include "alert.html" %}
+
+            <form action="/endpointQuery" method="POST">
+
+                <div class="form-group form-group--inline">
+                    <div class="form-group__text">
+                        <input type="text" placeholder="MAC Address" value="{{mac_address}}"
+                            name="mac_address" required pattern="^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$">
+                    </div>
+                    <button class="btn btn--primary" type="submit" onclick="showLoadingText(this)"
+                        onload="showOriginalText(this, 'Query Endpoint')">Query Endpoint</button>
+                </div>
+
+                {% if post_request_done%}
+
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item"><span class="bold">Status:</span> {{endpoint_list.Status}}</li>
+                    <li class="list-group-item"><span class="bold">MAC Address:</span> {{endpoint_list.MACAddress}}</li>
+                    <li class="list-group-item"><span class="bold">Switch:</span> {{endpoint_list.NAD}}</li>
+                    <li class="list-group-item"><span class="bold">Interface:</span> {{endpoint_list.Interface}}</li>
+                    <li class="list-group-item"><span class="bold">Auth Mechanism:</span> {{endpoint_list.AuthMethod}}</li>
+                    <li class="list-group-item"><span class="bold">Username:</span> {{endpoint_list.Username}}</li>
+                    <li class="list-group-item"><span class="bold">Identity Group:</span> {{endpoint_list.IdentityGroup}}</li>
+                    <li class="list-group-item"><span class="bold">Security Group Tag:</span> {{endpoint_list.SGT}}</li>
+                    <li class="list-group-item"><span class="bold">Failure Reason:</span> {{endpoint_list.FailureReason}}</li>
+                </ul>
+
+                {% else %}
+
+                    <div class="no_query">Please enter a MAC address and press the button to execute a endpoint query.</div>
+                
+                {% endif %}
+
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,71 @@
+<!-- Page that show all NAD devices in a table and redirect to the specific query page of a device. 
+    The redirection can be manually triggered by a "Query Device" link in each table row and thereby 
+    for each NAD device. -->
+
+{% extends "masterPage.html" %}
+
+{% block content %}
+<div class="row">
+
+    <!-- Left Rail -->
+    {% include "menu.html" %}
+
+    <!-- Middle + Right Rail -->
+    <div class="col-9 col-xl-10 col-md-9">
+        <div class="section">
+            
+            <div class="headline">
+                <h2>Device List</h2>
+            </div>
+
+            <!--Alert for error message-->
+            {% include "alert.html" %}
+
+            <form action="/" method="POST">
+
+                {% if device_list and error != true %}
+
+                <div class="responsive-table">
+                    <table class="table table--lined table--selectable">
+                        <thead>
+                            <tr>
+                                <th class="w-33">Device Name</th>
+                                <th class="w-33">Device IP</th>
+                                <th class="w-33">Query</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            {% for key, value in device_list.items() %}
+                                <tr>
+                                    <td>
+                                        {{key}}
+                                    </td>
+                                    <td>
+                                        {{value}}
+                                    </td>
+                                    <td>
+                                        <button name="ip_address" value={{value}} class="btn btn--link link_btn"
+                                            type="submit" onclick="showLoadingText(this)"
+                                            onload="showOriginalText(this, 'Query')">Query
+                                            Device</button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+
+                        </tbody>
+                    </table>
+                </div>
+
+                {% else %}
+                    <div class="no_query">
+                        No devices available.
+                    </div>
+                {% endif %}
+
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
