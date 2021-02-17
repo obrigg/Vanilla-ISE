@@ -1,0 +1,6 @@
+Pipfile.lock
+workspace.code-workspace
+__pycache__/*
+voucher.json
+Vanilla ISE mockup.pptx
+env.txt
