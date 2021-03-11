@@ -22,12 +22,22 @@ auth = HTTPBasicAuth(ise_user, ise_password)
 
 testbed_template = {'devices':{
         'device':{
-        'ip':'',
-        'port': 22,
-        'protocol': 'ssh',
-        'username': switch_user,
-        'password': switch_password,
-        'os': 'iosxe' }}}
+        'type': 'switch',
+        'connections': {
+            'cli': {
+                'ip': '',
+                'port': 22,
+                'protocol': 'ssh',
+            }
+        },
+        'credentials': {
+            'default': {
+                'username': switch_user,
+                'password': switch_password,
+            }
+        },
+        'os': 'iosxe'
+        }}}
 ######   End of envrionment setup   ######
 
 ######         ISE functions        ######
@@ -180,7 +190,7 @@ def get_device_auth_sessions(device_ip: str):
         print('Error, invalid device IP address')
         return("ERROR: Invalid IP address")
     testbed_input = testbed_template
-    testbed_input['devices']['device']['ip'] = ip.format()
+    testbed_input['devices']['device']['connections']['cli']['ip'] = ip.format()
     testbed = load(testbed_input)
     device = testbed.devices['device']
     try:

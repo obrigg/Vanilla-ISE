@@ -14,7 +14,8 @@ or implied.
 #Import Section
 from flask import Flask, render_template, request, url_for, redirect
 import backend
-from time import ctime
+from time import ctime, sleep
+from threading import Thread
 
 #Global Variables
 app = Flask(__name__)
@@ -47,6 +48,12 @@ def propagate_backend_exception(backend_response):
     '''
     if 'ERROR' in str(backend_response): 
         raise Exception(str(backend_response))    
+
+
+def voucher_cleanup_loop():
+    while True:
+        backend.voucher_cleanup(backend.voucher_group_name)
+        sleep(10*60)
 
 
 #Routes
@@ -176,5 +183,6 @@ def endpointQuery():
 
 #Main Function
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', debug=True)
-
+    t = Thread(target=voucher_cleanup_loop)
+    t.start()
+    app.run(host='0.0.0.0', debug=True, threaded=True)
