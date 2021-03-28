@@ -1,6 +1,7 @@
 import re, os, requests, json, xmltodict
 from time import time
 from netaddr import *
+from pprint import pprint
 from genie.testbed import load
 from requests.auth import HTTPBasicAuth
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
@@ -89,17 +90,30 @@ def update_ise_endpoint_group(mac_address:str, group_name:str):
     print(f"ISE endpoint group name: {group_name}, id: {ise_group_id}")
     if ise_group_id != "ERROR":
         url = base_url + "endpoint/name/" + mac_address
-        try:
-            endpoint_id = requests.get(url=url, auth=auth, headers=headers, 
-                verify=False).json()["ERSEndPoint"]["id"]
+        response = requests.get(url=url, auth=auth, headers=headers, verify=False)
+        if response.status_code == 200:
+            endpoint_id = response.json()["ERSEndPoint"]["id"]
             print(f"ISE endpoint {mac_address}, id: {endpoint_id}")
-        except:
-            print(f"Endpoint {mac_address} wasn't found.") 
+            # The endpoint exists in the database, need to update its endpoint group assignment
+            url = base_url + "endpoint/" + endpoint_id
+            data = ('{"ERSEndPoint": {"groupId": "%s","staticGroupAssignment": "true"}}' % ise_group_id)
+            response = requests.put(url=url, data=data, auth=auth, headers=headers, verify=False)
+            print(response.json())
             #
-        url = base_url + "endpoint/" + endpoint_id
-        data = ('{"ERSEndPoint": {"groupId": "%s","staticGroupAssignment": "true"}}' % ise_group_id)
-        response = requests.put(url=url, data=data, auth=auth, headers=headers, verify=False)
-        print(response)
+        elif response.status_code == 404:
+            # The does endpoint exist in the database, need to create it
+            # and assign it to the endpoint group
+            print(f"ISE endpoint {mac_address} was not found. Creating a new one")
+            url = base_url + "endpoint/"
+            data = {"ERSEndPoint": 
+                {
+                    "mac": mac_address,
+                    "groupId": ise_group_id,
+                    "staticGroupAssignment": "true"
+                }
+            }
+            response = requests.post(url=url, data=json.dumps(data), auth=auth, headers=headers, verify=False)
+            print(f"Creation status: {response.json()}")
         return("Done")
     else:
         return("ERROR")
@@ -253,7 +267,7 @@ def format_mac(mac_address:str):
 
 def read_voucher_json():
     try:
-        print("Reading the voucher list")
+        print("Reading the voucher list...")
         with open('./data/voucher.json', 'r') as f:
             voucher_json = json.loads(f.read())
     except:
@@ -261,6 +275,9 @@ def read_voucher_json():
         with open('./data/voucher.json', 'w') as f:
             voucher_json = {}
             json.dump(voucher_json, f)
+    print("Voucher list content:\n=======================")
+    pprint(voucher_json)
+    print("=======================")
     return(voucher_json)
 
 
@@ -275,6 +292,10 @@ def add_voucher(mac_address: str, duration: int):
         try:
             # Update ISE
             update_ise_endpoint_group(mac, voucher_group_name)
+        except:
+            print(f"ERROR: Wasn't able to add {mac} to the voucher list")
+            return(f"ERROR: Wasn't able to add {mac} to the voucher list")
+        try:
             # Update the voucher file
             voucher_json = read_voucher_json()
             print(f"Adding MAC {mac} with a duration of {duration} hours to the voucher list")
@@ -283,8 +304,8 @@ def add_voucher(mac_address: str, duration: int):
                 json.dump(voucher_json, f)
             return("Done")
         except:
-            print(f"ERROR: Wasn't able to add {mac} to the voucher list")
-            return(f"ERROR: Wasn't able to add {mac} to the voucher list")
+            print("ERROR: Wasn't able to update the voucher file")
+            return("ERROR: Wasn't able to update the voucher file")        
     else:
         return("ERROR")
 
