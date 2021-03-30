@@ -113,7 +113,7 @@ def update_ise_endpoint_group(mac_address:str, group_name:str):
                 }
             }
             response = requests.post(url=url, data=json.dumps(data), auth=auth, headers=headers, verify=False)
-            print(f"Creation status: {response.json()}")
+            print(f"Creation status code: {response.status_code}")
         return("Done")
     else:
         return("ERROR")
@@ -275,7 +275,8 @@ def read_voucher_json():
         with open('./data/voucher.json', 'w') as f:
             voucher_json = {}
             json.dump(voucher_json, f)
-    print("Voucher list content:\n=======================")
+    print(f"Voucher list content (Epoch current time: {int(time())}):\
+        \n=======================")
     pprint(voucher_json)
     print("=======================")
     return(voucher_json)
@@ -299,7 +300,7 @@ def add_voucher(mac_address: str, duration: int):
             # Update the voucher file
             voucher_json = read_voucher_json()
             print(f"Adding MAC {mac} with a duration of {duration} hours to the voucher list")
-            voucher_json[mac] = time() + duration*60*60            
+            voucher_json[mac] = int(time()) + duration*60*60            
             with open('./data/voucher.json', 'w') as f:
                 json.dump(voucher_json, f)
             return("Done")
@@ -343,7 +344,7 @@ def voucher_cleanup(voucher_group_name: str):
     print("About to clean up the voucher list...")
     voucher_json = read_voucher_json()
     for mac in voucher_json:
-        if voucher_json[mac] < time():
+        if voucher_json[mac] < int(time()):
             print(f"Removing expired voucher for {mac}.")
             revoke_voucher(mac)
 
