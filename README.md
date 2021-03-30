@@ -68,10 +68,10 @@ SWITCH_ENABLE= <enable password for network devices>
 `docker build -t vanilla-ise .`
 
 ### Run the Docker
-`docker run -d --env-file <path to env file> -v <path to data dir>:/vanilla-ise/data vanilla-ise`
+`docker run -d --env-file <path to env file> -v <path to data dir>:/Vanilla-ISE/data obrigg/vanilla-ise`
 
 running the Docker in interactive mode:
-`docker run -ti --env-file <path to env file> -v <path to data dir>:/vanilla-ise/data vanilla-ise`
+`docker run -ti --env-file <path to env file> -v <path to data dir>:/Vanilla-ISE/data obrigg/vanilla-ise`
 
 ----
 ### Licensing info
