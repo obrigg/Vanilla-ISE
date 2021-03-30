@@ -719,18 +719,18 @@ $(document).ready(function() {
     });
 
     // Load the changelog
-    $.get('changelog.md', function(markdownContent) {
-        var converter = new Markdown.Converter();
-        $("#changelog-content").html(converter.makeHtml(markdownContent));
-    });
+    //$.get('changelog.md', function(markdownContent) {
+    //    var converter = new Markdown.Converter();
+    //    $("#changelog-content").html(converter.makeHtml(markdownContent));
+    //});
 
     // Load the broadcast file (if it exists)
-    $.getJSON('broadcast.json', function(data) {
-        if (data && data.text && data.text.length) {
-            $("#broadcast-msg").html(data.text);
-            $("#broadcast").toggleClass('hide');
-        }
-    });
+    //$.getJSON('broadcast.json', function(data) {
+    //    if (data && data.text && data.text.length) {
+    //        $("#broadcast-msg").html(data.text);
+    //        $("#broadcast").toggleClass('hide');
+    //    }
+    //});
 
     window.addEventListener('hashchange', function (e) {
         checkUrlAndSetupPage(e.newURL);
