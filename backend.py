@@ -294,8 +294,8 @@ def add_voucher(mac_address: str, duration: int):
             # Update ISE
             update_ise_endpoint_group(mac, voucher_group_name)
         except:
-            print(f"ERROR: Wasn't able to add {mac} to the voucher list")
-            return(f"ERROR: Wasn't able to add {mac} to the voucher list")
+            print(f"ERROR: Wasn't able to add {mac} to ISE's voucher list")
+            return(f"ERROR: Wasn't able to add {mac} to ISE's voucher list")
         try:
             # Update the voucher file
             voucher_json = read_voucher_json()
@@ -321,6 +321,10 @@ def revoke_voucher(mac_address: str):
         # Update ISE
         print(f"Deleting MAC {mac} from ISE")
         remove_ise_endpoint_group(mac_address, voucher_group_name)
+    except:
+        print(f"ERROR: Wasn't able to add {mac} to ISE's voucher list")
+        return(f"ERROR: Wasn't able to add {mac} to ISE's voucher list")
+    try:
         # Update voucher file
         voucher_json = read_voucher_json()
         if mac in voucher_json:
@@ -332,7 +336,7 @@ def revoke_voucher(mac_address: str):
         else:
             print(f"ERROR: MAC address {mac} not found on the voucher list")
     except:
-        print(f"ERROR: MAC address {mac} not found on ISE")
+        print("ERROR: Wasn't able to update the voucher file")
         return("ERROR")
 
 
