@@ -15,7 +15,9 @@ base_url = "https://" + os.environ.get('ISE_IP', "") + ":9060/ers/config/"
 switch_user = os.environ.get('SWITCH_USER', "netadmin")
 switch_password = os.environ.get('SWITCH_PASS', "")
 switch_enable = os.environ.get('SWITCH_ENABLE', "")
-voucher_group_name = "AAA-Vouchers"
+voucher_group_A = "AAA-Vouchers"
+voucher_group_B = "BBB-Vouchers"
+voucher_group_C = "CCC-Vouchers"
 
 headers = {"Content-Type": "application/json",
     "Accept": "application/json"}
@@ -265,24 +267,31 @@ def format_mac(mac_address:str):
         return("ERROR")
 
 
-def read_voucher_json():
+def read_voucher_list():
+    '''
+    Voucher file format:
+    [
+        {"mac": "00:11:22:33:44:55", "duration": 1617292081, "group": "AAA-Vouchers"},
+        {"mac": "11:22:33:44:55:66", "duration": 1617293054, "group": "BBB-Vouchers"}
+    ]
+    '''
     try:
         print("Reading the voucher list...")
         with open('./data/voucher.json', 'r') as f:
-            voucher_json = json.loads(f.read())
+            voucher_list = json.loads(f.read())
     except:
         print("Looks like the voucher list does not exist. Creating a new one...")
         with open('./data/voucher.json', 'w') as f:
-            voucher_json = {}
-            json.dump(voucher_json, f)
-    print(f"Voucher list content (Epoch current time: {int(time())}):\
+            voucher_list = []
+            json.dump(voucher_list, f)
+    print(f"Voucher list content (Current Epoch time: {int(time())}):\
         \n=======================")
-    pprint(voucher_json)
+    pprint(voucher_list)
     print("=======================")
-    return(voucher_json)
+    return(voucher_list)
 
 
-def add_voucher(mac_address: str, duration: int):
+def add_voucher(mac_address: str, duration: int, voucher_group: str):
     '''
     This function will receive an endpoint MAC address, add it to ISE's
     voucher endpoint group, and add an entry to the voucher list file 
@@ -291,24 +300,30 @@ def add_voucher(mac_address: str, duration: int):
     mac = format_mac(mac_address)
     if mac != "ERROR":
         try:
+            # Update the voucher file
+            voucher_list = read_voucher_list()
+            if any(mac in voucher['mac'] for voucher in voucher_list):
+                print(f"ERROR: MAC {mac} already has a voucher. Kindly revoke it first.")
+                return(f"ERROR: MAC {mac} already has a voucher. Kindly revoke it first.")
+            else:
+                print(f"Adding MAC {mac} with a duration of {duration} hours to the voucher group {voucher_group}")
+                voucher = {"mac": mac, "duration": int(time()) + duration*60*60, "group": voucher_group}
+                voucher_list.append(voucher)
+                with open('./data/voucher.json', 'w') as f:
+                    json.dump(voucher_list, f)
+                return("Done")
+        except:
+            print("ERROR: Wasn't able to update the voucher file")
+            return("ERROR: Wasn't able to update the voucher file")
+        try:
             # Update ISE
-            update_ise_endpoint_group(mac, voucher_group_name)
+            update_ise_endpoint_group(mac, voucher_group)
         except:
             print(f"ERROR: Wasn't able to add {mac} to ISE's voucher list")
             return(f"ERROR: Wasn't able to add {mac} to ISE's voucher list")
-        try:
-            # Update the voucher file
-            voucher_json = read_voucher_json()
-            print(f"Adding MAC {mac} with a duration of {duration} hours to the voucher list")
-            voucher_json[mac] = int(time()) + duration*60*60            
-            with open('./data/voucher.json', 'w') as f:
-                json.dump(voucher_json, f)
-            return("Done")
-        except:
-            print("ERROR: Wasn't able to update the voucher file")
-            return("ERROR: Wasn't able to update the voucher file")        
     else:
-        return("ERROR")
+        print(f"ERROR: Invalid MAC address: {mac_address}")
+        return("ERROR: Invalid MAC address")
 
 
 def revoke_voucher(mac_address: str):
@@ -320,19 +335,21 @@ def revoke_voucher(mac_address: str):
     try:
         # Update ISE
         print(f"Deleting MAC {mac} from ISE")
-        remove_ise_endpoint_group(mac_address, voucher_group_name)
+        remove_ise_endpoint_group(mac_address, voucher_group)
     except:
         print(f"ERROR: Wasn't able to add {mac} to ISE's voucher list")
         return(f"ERROR: Wasn't able to add {mac} to ISE's voucher list")
     try:
         # Update voucher file
-        voucher_json = read_voucher_json()
-        if mac in voucher_json:
-            print(f"Deleting MAC {mac} from the voucher list")
-            del voucher_json[mac]
-            with open('./data/voucher.json', 'w') as f:
-                json.dump(voucher_json, f)
-            return("Done")
+        voucher_list = read_voucher_list()
+        if any(mac in voucher['mac'] for voucher in voucher_list):
+            for voucher in voucher_list:
+                if voucher['mac'] == mac:
+                    print(f"Deleting MAC {mac} from the voucher list")
+                    voucher_list.remove(voucher)
+                    with open('./data/voucher.json', 'w') as f:
+                        json.dump(voucher_list, f)
+                    return("Done")
         else:
             print(f"ERROR: MAC address {mac} not found on the voucher list")
     except:
@@ -340,17 +357,17 @@ def revoke_voucher(mac_address: str):
         return("ERROR")
 
 
-def voucher_cleanup(voucher_group_name: str):
+def voucher_cleanup():
     '''
     This function will go through the voucher list and remove endpoints
     with an expired voucher from ISE's endpoint group.
     '''
     print("About to clean up the voucher list...")
-    voucher_json = read_voucher_json()
-    for mac in voucher_json:
-        if voucher_json[mac] < int(time()):
-            print(f"Removing expired voucher for {mac}.")
-            revoke_voucher(mac)
+    voucher_list = read_voucher_list()
+    for voucher in voucher_list:
+        if voucher['duration'] < int(time()):
+            print(f"Removing expired voucher for {voucher['mac']}.")
+            revoke_voucher(voucher['mac'])
 
 
 if __name__ == "__main__":

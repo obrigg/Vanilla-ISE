@@ -27,17 +27,18 @@ def convert_voucher_list(voucher_list):
     and expire timestamps (in seconds since the epoch, in UTC) and convert it 
     to MAC addresses (in the format xx:xx:xx:xx:xx:xx) and expire dates (as strings in local time).
     In: {"xxxx.xxxx.xxxx": 1613129301.6337228, "xxxx.xxxx.xxxx": 1613129332.6337228}
-    Out:[{'MACAddress': 'xx:xx:xx:xx:xx:xx', 'ExpDate': 'Fri Feb 12 12:28:21 2021'},
-        {'MACAddress': 'xx:xx:xx:xx:xx:xx', 'ExpDate': 'Fri Feb 12 18:28:21 2021'}]
+    Out:[{'MACAddress': 'xx:xx:xx:xx:xx:xx', 'ExpDate': 'Fri Feb 12 12:28:21 2021', 'group': 'AAA-Vouchers'},
+        {'MACAddress': 'xx:xx:xx:xx:xx:xx', 'ExpDate': 'Fri Feb 12 18:28:21 2021', 'group': 'BBB-Vouchers'}]
     '''    
     converted_voucher_list = []
     
-    for key, value in voucher_list.items():
+    for voucher in voucher_list:
         
-        dot_free_mac = key.replace('.','')
+        dot_free_mac = voucher['mac'].replace('.','')
         mac_address = ':'.join(dot_free_mac[i:i+2] for i in range(0,12,2))       
-        exp_date = ctime(value)
-        converted_voucher_list.append({"MACAddress": mac_address, "ExpDate": exp_date})
+        exp_date = ctime(voucher['duration'])
+        voucher_group = voucher['group']
+        converted_voucher_list.append({"MACAddress": mac_address, "ExpDate": exp_date, "group": voucher_group})
 
     return converted_voucher_list
 
@@ -52,7 +53,7 @@ def propagate_backend_exception(backend_response):
 
 def voucher_cleanup_loop():
     while True:
-        backend.voucher_cleanup(backend.voucher_group_name)
+        backend.voucher_cleanup()
         sleep(10*60)
 
 
@@ -122,7 +123,7 @@ def voucher():
     try:               
         if request.method == 'GET':   
             
-            voucher_list = convert_voucher_list(backend.read_voucher_json())
+            voucher_list = convert_voucher_list(backend.read_voucher_list())
             propagate_backend_exception(voucher_list)
 
             return render_template('voucher.html', voucher_list=voucher_list, new_voucher=False)
@@ -133,12 +134,13 @@ def voucher():
             row_mac_address =  request.form.get("voucher_sumbit")
             form_mac_address =  request.form.get("mac_address_field")
             voucher_duration =  request.form.get("voucher_duration")
+            voucher_group =  request.form.get("voucher_group")
 
             if(submit_type == "Add"):
 
-                add_response = backend.add_voucher(form_mac_address, int(voucher_duration))
+                add_response = backend.add_voucher(form_mac_address, int(voucher_duration), voucher_group)
                 propagate_backend_exception(add_response)
-                voucher_list = convert_voucher_list(backend.read_voucher_json())
+                voucher_list = convert_voucher_list(backend.read_voucher_list())
                 propagate_backend_exception(voucher_list)
                 
                 return render_template('voucher.html', voucher_list=voucher_list, new_voucher=True)
@@ -147,7 +149,7 @@ def voucher():
 
                 revoke_response = backend.revoke_voucher(row_mac_address)
                 propagate_backend_exception(revoke_response)
-                voucher_list = convert_voucher_list(backend.read_voucher_json())
+                voucher_list = convert_voucher_list(backend.read_voucher_list())
                 propagate_backend_exception(voucher_list)
 
                 return render_template('voucher.html', voucher_list=voucher_list, deleted_voucher=True)

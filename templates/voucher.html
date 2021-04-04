@@ -45,17 +45,22 @@
                         <table class="table table--lined table--selectable table">
                             <thead>
                                 <tr>
-                                    <th class="w-33">MAC Address</span></th>
-                                    <th class="w-33">Expiration Time (UTC)</th>
-                                    <th class="w-33">Revoke</th>
+                                    <th class="w-25">MAC Address</span></th>
+                                    <th class="w-25">Voucher Group</span></th>
+                                    <th class="w-25">Expiration Time (UTC)</th>
+                                    <th class="w-25">Revoke</th>
                                 </tr>
                             </thead>
                             <tbody>
 
                                 {% for voucher in voucher_list %}
+                                
                                 <tr>
                                     <td>
                                         {{voucher.MACAddress}}
+                                    </td>
+                                    <td>
+                                        {{voucher.group}}
                                     </td>
                                     <td>
                                         {{voucher.ExpDate}}
@@ -114,6 +119,19 @@
                                                     <option value="48">48 Hours</option>
                                                 </select>
                                                 <label for="select-type-basic">Duration</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <div class="form-group base-margin-bottom base-margin-top">
+                                            <div class="form-group__text select">
+                                                <select name="voucher_group" id="select-type-basic">
+                                                    <option value="AAA-Vouchers">Group A</option>
+                                                    <option value="BBB-Vouchers">Group B</option>
+                                                    <option value="CCC-Vouchers">Group C</option>
+                                                </select>
+                                                <label for="select-type-basic">Voucher Group</label>
                                             </div>
                                         </div>
                                     </div>
