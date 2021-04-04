@@ -44,7 +44,7 @@ testbed_template = {'devices':{
 ######         ISE functions        ######
 def get_all_NADs():
     '''
-    This function will retrieve all NADs configured on ISE, and return a disctionary with
+    This function will retrieve all NADs configured on ISE, and return a dictionary with
     the NADs hostname (as configured on ISE) and IP address.
 
     Example output:
