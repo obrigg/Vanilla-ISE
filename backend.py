@@ -311,13 +311,13 @@ def add_voucher(mac_address: str, duration: int, voucher_group: str):
                 voucher_list.append(voucher)
                 with open('./data/voucher.json', 'w') as f:
                     json.dump(voucher_list, f)
-                return("Done")
         except:
             print("ERROR: Wasn't able to update the voucher file")
             return("ERROR: Wasn't able to update the voucher file")
         try:
             # Update ISE
             update_ise_endpoint_group(mac, voucher_group)
+            return("Done")
         except:
             print(f"ERROR: Wasn't able to add {mac} to ISE's voucher list")
             return(f"ERROR: Wasn't able to add {mac} to ISE's voucher list")
@@ -326,7 +326,7 @@ def add_voucher(mac_address: str, duration: int, voucher_group: str):
         return("ERROR: Invalid MAC address")
 
 
-def revoke_voucher(mac_address: str):
+def revoke_voucher(mac_address: str, voucher_group: str):
     '''
     This function will receive an endpoint MAC address, remove it from 
     ISE's voucher endpoint group, and from the voucher list file.
@@ -337,8 +337,8 @@ def revoke_voucher(mac_address: str):
         print(f"Deleting MAC {mac} from ISE")
         remove_ise_endpoint_group(mac_address, voucher_group)
     except:
-        print(f"ERROR: Wasn't able to add {mac} to ISE's voucher list")
-        return(f"ERROR: Wasn't able to add {mac} to ISE's voucher list")
+        print(f"ERROR: Wasn't able to remove {mac} from ISE's voucher list")
+        return(f"ERROR: Wasn't able to remove {mac} from ISE's voucher list")
     try:
         # Update voucher file
         voucher_list = read_voucher_list()
@@ -366,8 +366,8 @@ def voucher_cleanup():
     voucher_list = read_voucher_list()
     for voucher in voucher_list:
         if voucher['duration'] < int(time()):
-            print(f"Removing expired voucher for {voucher['mac']}.")
-            revoke_voucher(voucher['mac'])
+            print(f"Removing expired voucher of {voucher['mac']} from voucher group {voucher['group']}.")
+            revoke_voucher(voucher['mac'], voucher['group'])
 
 
 if __name__ == "__main__":
