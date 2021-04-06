@@ -343,7 +343,6 @@ def revoke_voucher(mac_address: str):
                     voucher_list.remove(voucher)
                     with open('./data/voucher.json', 'w') as f:
                         json.dump(voucher_list, f)
-                    return("Done")
         else:
             print(f"ERROR: MAC address {mac} not found on the voucher list")
     except:
@@ -353,6 +352,7 @@ def revoke_voucher(mac_address: str):
         # Update ISE
         print(f"Deleting MAC {mac} from ISE")
         remove_ise_endpoint_group(mac_address, voucher_group)
+        return("Done")
     except:
         print(f"ERROR: Wasn't able to remove {mac} from ISE's voucher list")
         return(f"ERROR: Wasn't able to remove {mac} from ISE's voucher list")
