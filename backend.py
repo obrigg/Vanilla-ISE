@@ -1,4 +1,9 @@
-import re, os, requests, json, xmltodict
+from genie.metaparser.util.exceptions import SchemaEmptyParserError
+import re
+import os
+import requests
+import json
+import xmltodict
 from time import time
 from netaddr import *
 from pprint import pprint
@@ -6,7 +11,6 @@ from genie.testbed import load
 from requests.auth import HTTPBasicAuth
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-from genie.metaparser.util.exceptions import SchemaEmptyParserError
 
 ######   Setting up the environment ######
 ise_user = os.environ.get('ISE_USER', "admin")
@@ -18,20 +22,21 @@ switch_enable = os.environ.get('SWITCH_ENABLE', "")
 voucher_group_A = "AAA-Vouchers"
 voucher_group_B = "BBB-Vouchers"
 voucher_group_C = "CCC-Vouchers"
+timeout = 15 * 60 # in minutes
 
-headers = {"Content-Type": "application/json",
-    "Accept": "application/json"}
 auth = HTTPBasicAuth(ise_user, ise_password)
+headers = {"Content-Type": "application/json",
+           "Accept": "application/json"}
 
-testbed_template = {'devices':{
-        'device':{
+testbed_template = {'devices': {
+    'device': {
         'type': 'switch',
         'connections': {
-            'cli': {
-                'ip': '',
-                'port': 22,
-                'protocol': 'ssh',
-            }
+                'cli': {
+                    'ip': '',
+                    'port': 22,
+                    'protocol': 'ssh',
+                }
         },
         'credentials': {
             'default': {
@@ -40,10 +45,12 @@ testbed_template = {'devices':{
             }
         },
         'os': 'iosxe'
-        }}}
+    }}}
 ######   End of envrionment setup   ######
 
 ######         ISE functions        ######
+
+
 def get_all_NADs():
     '''
     This function will retrieve all NADs configured on ISE, and return a dictionary with
@@ -58,17 +65,20 @@ def get_all_NADs():
     url = base_url + 'networkdevice/'
     print(f'About to fetch the NAD list from {url}')
     try:
-        NAD_list = requests.get(url=url, headers=headers, auth=auth, verify=False).json()
+        NAD_list = requests.get(url=url, headers=headers,
+                                auth=auth, verify=False).json()
         NAD_list_details = {}
         for NAD in NAD_list['SearchResult']['resources']:
             nad_url = url + NAD['id']
-            NAD_details = requests.get(url=url+NAD['id'], headers=headers, auth=auth, verify=False).json()
-            NAD_list_details[NAD_details['NetworkDevice']['name']] = NAD_details['NetworkDevice']['NetworkDeviceIPList'][0]['ipaddress']
+            NAD_details = requests.get(
+                url=url+NAD['id'], headers=headers, auth=auth, verify=False).json()
+            NAD_list_details[NAD_details['NetworkDevice']['name']
+                             ] = NAD_details['NetworkDevice']['NetworkDeviceIPList'][0]['ipaddress']
         print(f"Found {len(NAD_list_details)} NADs.")
         return(NAD_list_details)
     except:
         print('An error has occured trying to fetch the NAD list')
-        return({'ERROR','ERROR'})
+        return({'ERROR', 'ERROR'})
 
 
 def get_ise_group_id(group_name: str):
@@ -87,72 +97,86 @@ def get_ise_group_id(group_name: str):
         return("ERROR")
 
 
-def update_ise_endpoint_group(mac_address:str, group_name:str):
+def update_ise_endpoint_group(mac_address: str, group_name: str):
     ise_group_id = get_ise_group_id(group_name)
     print(f"ISE endpoint group name: {group_name}, id: {ise_group_id}")
     if ise_group_id != "ERROR":
         url = base_url + "endpoint/name/" + mac_address
-        response = requests.get(url=url, auth=auth, headers=headers, verify=False)
+        response = requests.get(
+            url=url, auth=auth, headers=headers, verify=False)
         if response.status_code == 200:
             endpoint_id = response.json()["ERSEndPoint"]["id"]
             print(f"ISE endpoint {mac_address}, id: {endpoint_id}")
             # The endpoint exists in the database, need to update its endpoint group assignment
             url = base_url + "endpoint/" + endpoint_id
-            data = ('{"ERSEndPoint": {"groupId": "%s","staticGroupAssignment": "true"}}' % ise_group_id)
-            response = requests.put(url=url, data=data, auth=auth, headers=headers, verify=False)
+            data = (
+                '{"ERSEndPoint": {"groupId": "%s","staticGroupAssignment": "true"}}' % ise_group_id)
+            response = requests.put(
+                url=url, data=data, auth=auth, headers=headers, verify=False)
             print(response.json())
             #
         elif response.status_code == 404:
             # The does endpoint exist in the database, need to create it
             # and assign it to the endpoint group
-            print(f"ISE endpoint {mac_address} was not found. Creating a new one")
+            print(
+                f"ISE endpoint {mac_address} was not found. Creating a new one")
             url = base_url + "endpoint/"
-            data = {"ERSEndPoint": 
-                {
-                    "mac": mac_address,
-                    "groupId": ise_group_id,
-                    "staticGroupAssignment": "true"
-                }
-            }
-            response = requests.post(url=url, data=json.dumps(data), auth=auth, headers=headers, verify=False)
+            data = {"ERSEndPoint":
+                    {
+                        "mac": mac_address,
+                        "groupId": ise_group_id,
+                        "staticGroupAssignment": "true"
+                    }
+                    }
+            response = requests.post(url=url, data=json.dumps(
+                data), auth=auth, headers=headers, verify=False)
             print(f"Creation status code: {response.status_code}")
         return("Done")
     else:
         return("ERROR")
 
 
-def remove_ise_endpoint_group(mac_address:str, group_name:str):
+def remove_ise_endpoint_group(mac_address: str, group_name: str):
     ise_group_id = get_ise_group_id(group_name)
     if ise_group_id != "ERROR":
         url = base_url + "endpoint/name/" + mac_address
-        endpoint_id = requests.get(url=url, auth=auth, headers=headers, 
-            verify=False).json()["ERSEndPoint"]["id"]
+        endpoint_id = requests.get(url=url, auth=auth, headers=headers,
+                                   verify=False).json()["ERSEndPoint"]["id"]
         #
         url = base_url + "endpoint/" + endpoint_id
-        data = ('{"ERSEndPoint": {"groupId": "%s","staticGroupAssignment": "true"}}' % ise_group_id)
-        response = requests.delete(url=url, data=data, auth=auth, headers=headers, verify=False)
+        data = (
+            '{"ERSEndPoint": {"groupId": "%s","staticGroupAssignment": "true"}}' % ise_group_id)
+        response = requests.delete(
+            url=url, data=data, auth=auth, headers=headers, verify=False)
         print(response)
         return("Done")
     else:
         return("ERROR")
 
 
-def initialize_ise():
-    url = "https://" + os.environ.get('ISE_IP', "") + "/admin/"
-    response = requests.get(url=url, auth=auth, headers=headers, verify=False)
-    if response.status_code == 200:
-        return("Done")
+def initialize_ise(name, passw):
+    '''
+    This function validates the user-provided credentials against ISE.
+    If the credentials allow access to ISE's APIs - it will return "Done", otherwise - "ERROR".
+    '''
+    print(f"Logging into ISE with username: {name}")
+    url = "https://" + os.environ.get('ISE_IP', "") + ":9060/ers/sdk"
+    user_auth = HTTPBasicAuth(name,passw)
+    Iresponse = requests.get(url=url, headers=headers, auth=user_auth, verify=False)
+    if Iresponse.status_code == 200:
+       print(f"User {name} has suffecient permissions to login to ISE") 
+       return("Done")
     else:
-        print(f"ERROR: Can't access ISE. Code: {response.status_code}")
+        print(f"ERROR: Can't access ISE/failed User. Code: {Iresponse.status_code}")
         return("ERROR")
 
 
-def check_ise_auth_status(mac_address:str):
+def check_ise_auth_status(mac_address: str):
     '''
     This function will return the authentication status of a given endpoint.
     Assumption: there was an authentication event during the last 24 hours.
     '''
-    duration = 86400 # 24 hours
+    duration = 86400  # 24 hours
     mac = format_mac(mac_address)
     status_details = {}
     if mac != "ERROR":
@@ -161,7 +185,9 @@ def check_ise_auth_status(mac_address:str):
         # <duration in seconds>/
         # <number of records>/
         # <"All" or "0" determies if the output is full or filtered>
-        url = "https://" + os.environ.get('ISE_IP', "") + "/admin/API/mnt/AuthStatus/MACAddress/" + mac + "/" + str(duration) + "/1/All"
+        url = "https://" + \
+            os.environ.get('ISE_IP', "") + "/admin/API/mnt/AuthStatus/MACAddress/" + \
+            mac + "/" + str(duration) + "/1/All"
         response = requests.get(url=url, auth=auth, verify=False)
         if response.status_code != 200:
             return(f"ERROR: Response status code is {response.status_code}.")
@@ -173,7 +199,8 @@ def check_ise_auth_status(mac_address:str):
                 status_details['MACAddress'] = status['authStatusOutputList']['authStatusList']['@key']
                 status_details['NAD'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['network_device_name']
                 status_details['Interface'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['nas_port_id']
-                status_details['AuthMethod'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['authentication_method']
+                status_details['AuthMethod'] = status['authStatusOutputList'][
+                    'authStatusList']['authStatusElements']['authentication_method']
                 status_details['Username'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['user_name']
                 status_details['IdentityGroup'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['identity_group']
                 # Mention failure reason (if failed, or "none" is succeeded)
@@ -182,7 +209,8 @@ def check_ise_auth_status(mac_address:str):
                     status_details['FailureReason'] = "None"
                 else:
                     status_details['Status'] = "Failure"
-                    status_details['FailureReason'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['failure_reason']
+                    status_details['FailureReason'] = status['authStatusOutputList'][
+                        'authStatusList']['authStatusElements']['failure_reason']
                 # Add SGT, if exists
                 if 'cts_security_group' in status['authStatusOutputList']['authStatusList']['authStatusElements'].keys():
                     status_details['SGT'] = status['authStatusOutputList']['authStatusList']['authStatusElements']['cts_security_group']
@@ -191,7 +219,7 @@ def check_ise_auth_status(mac_address:str):
                 return(status_details)
 ######       End of ISE functions      ######
 
-        
+
 def get_device_auth_sessions(device_ip: str):
     '''
     This function will retrieve the active authentication sessions on a 
@@ -210,7 +238,7 @@ def get_device_auth_sessions(device_ip: str):
     testbed = load(testbed_input)
     device = testbed.devices['device']
     try:
-        device.connect(via='cli', learn_hostname=True)    
+        device.connect(via='cli', learn_hostname=True)
     except:
         print(f"ERROR: Problem connecting to {device_ip}...")
         return([f"ERROR: Problem connecting to {device_ip}..."])
@@ -226,15 +254,16 @@ def get_device_auth_sessions(device_ip: str):
     for interface in auth_sessions['interfaces']:
         for client in auth_sessions['interfaces'][interface]['client']:
             if auth_sessions['interfaces'][interface]['client'][client]['domain'] != "UNKNOWN":
-                auth_details = device.parse(f"show authentication sessions interface {interface} details")
-                session = { 'Interface': interface,
-                            'EndpointMAC': client,
-                            'Status': auth_sessions['interfaces'][interface]['client'][client]['status'],
-                            'Method': auth_sessions['interfaces'][interface]['client'][client]['method'],
-                            'Username': auth_details['interfaces'][interface]['mac_address'][client]['user_name'],
-                            'IPv4': auth_details['interfaces'][interface]['mac_address'][client]['ipv4_address'],
-                            'NICVendor': EUI(client).oui.registration()['org']                            
-                    }
+                auth_details = device.parse(
+                    f"show authentication sessions interface {interface} details")
+                session = {'Interface': interface,
+                           'EndpointMAC': client,
+                           'Status': auth_sessions['interfaces'][interface]['client'][client]['status'],
+                           'Method': auth_sessions['interfaces'][interface]['client'][client]['method'],
+                           'Username': auth_details['interfaces'][interface]['mac_address'][client]['user_name'],
+                           'IPv4': auth_details['interfaces'][interface]['mac_address'][client]['ipv4_address'],
+                           'NICVendor': EUI(client).oui.registration()['org']
+                           }
                 try:
                     if "local_policies" in auth_details['interfaces'][interface]['mac_address'][client]:
                         session['Vlan']: auth_details['interfaces'][interface]['mac_address'][client]['local_policies']['vlan_group']['vlan']
@@ -253,7 +282,7 @@ def get_device_auth_sessions(device_ip: str):
     return(relevant_sessions)
 
 
-def format_mac(mac_address:str):
+def format_mac(mac_address: str):
     '''
     This function will validate MAC address input and return a MAC address
     formatted in "the Cisco way" (e.g. xxxx.xxxx.xxxx).
@@ -303,11 +332,14 @@ def add_voucher(mac_address: str, duration: int, voucher_group: str):
             # Update the voucher file
             voucher_list = read_voucher_list()
             if any(mac in voucher['mac'] for voucher in voucher_list):
-                print(f"ERROR: MAC {mac} already has a voucher. Kindly revoke it first.")
+                print(
+                    f"ERROR: MAC {mac} already has a voucher. Kindly revoke it first.")
                 return(f"ERROR: MAC {mac} already has a voucher. Kindly revoke it first.")
             else:
-                print(f"Adding MAC {mac} with a duration of {duration} hours to the voucher group {voucher_group}")
-                voucher = {"mac": mac, "duration": int(time()) + duration*60*60, "group": voucher_group}
+                print(
+                    f"Adding MAC {mac} with a duration of {duration} hours to the voucher group {voucher_group}")
+                voucher = {"mac": mac, "duration": int(
+                    time()) + duration*60*60, "group": voucher_group}
                 voucher_list.append(voucher)
                 with open('./data/voucher.json', 'w') as f:
                     json.dump(voucher_list, f)
@@ -339,7 +371,8 @@ def revoke_voucher(mac_address: str):
             for voucher in voucher_list:
                 if voucher['mac'] == mac:
                     voucher_group = voucher['group']
-                    print(f"Deleting MAC {mac} (group {voucher_group}) from the voucher list")
+                    print(
+                        f"Deleting MAC {mac} (group {voucher_group}) from the voucher list")
                     voucher_list.remove(voucher)
                     with open('./data/voucher.json', 'w') as f:
                         json.dump(voucher_list, f)
@@ -367,7 +400,8 @@ def voucher_cleanup():
     voucher_list = read_voucher_list()
     for voucher in voucher_list:
         if voucher['duration'] < int(time()):
-            print(f"Removing expired voucher of {voucher['mac']} from voucher group {voucher['group']}.")
+            print(
+                f"Removing expired voucher of {voucher['mac']} from voucher group {voucher['group']}.")
             revoke_voucher(voucher['mac'])
 
 

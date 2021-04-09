@@ -1,0 +1,63 @@
+<!-- This login page offers various input field to gather global information like API Keys, 
+    login name or password in advance of starting the demo.-->
+
+{% extends "masterPage.html" %}
+
+{% block content %}
+<form method="POST">
+    <div class="row" style="width:100%;">
+        <!-- Left Rail -->
+        <div class="col-xl-3 col-md-3">
+        </div>
+
+        <!-- Middle Rail -->
+        <div class="col-xl-6 col-md-6">
+            <div class="section">
+                <div class="panel panel--loose panel--raised base-margin-bottom">
+                    <form action="/clients" method="POST">
+                        <div class="section" style="width: 100%;">
+
+                            <!-- OPTIONAL: Replace with Customer Logo -->
+                            <div class="flex flex-center" style="margin-bottom:20px;">
+                                <img id="customer-logo"
+                                    src="{{ url_for('static', filename='IMAGES/vanilla_ISE_logo.png')}}">
+                            </div>
+
+                            <!--Login fields-->
+                            <div class="form-group base-margin-bottom">
+                                <div class="form-group__text">
+                                    <input name="username" type="text" required="" onfocus="showOriginalText('Login')">
+                                    <label for="username">Username:</label>
+                                </div>
+                            </div>
+
+                            <div class="form-group base-margin-bottom">
+                                <div class="form-group__text">
+                                    <input name="password" type="password" value="" required=""
+                                        onfocus="showOriginalText('Login')">
+                                    <label for="password">Password:</label>
+                                </div>
+                            </div>
+
+                            <!-- Button area-->
+                            <input id="login-submit" onclick="showLoadingText()" onload="showOriginalText('Login')"
+                                class="btn btn-primary" type="submit" value="Login">
+
+                        </div>
+
+                    </form>
+
+                    <!--Alert for error message-->
+                    <!--PASS INFO: Pass the following information to the template: error=True/False ; errormessage="xxx" ; errorcode=xxx-->
+                    {% include "alert.html" %}
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Rail -->
+        <div class="col-xl-3 col-md-3">
+        </div>
+    </div>
+</form>
+{% endblock %}
