@@ -1,4 +1,4 @@
-<img src="img/Vanilla_ISE_logo.png">
+<img src="img/vanilla_ISE_logo.png">
 
 ##### Your endpoint specialists will thank you later...
 ## The Challenge
