@@ -68,7 +68,7 @@ def check_ise_auth_status(mac_address: str):
         "/admin/API/mnt/Session/MACAddress/" + mac_address
     response = requests.get(url=url, auth=auth, verify=False)
     if response.status_code != 200:
-        print(f"\033[0;34mAn error has occurred: {response.text()}\033[0m")
+        print(f"\033[0;34mAn error has occurred: {response.text}\033[0m")
         return("ERROR")
     else:
         status = xmltodict.parse(response.text)
