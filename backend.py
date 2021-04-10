@@ -77,7 +77,7 @@ def get_all_NADs():
         print(f"Found {len(NAD_list_details)} NADs.")
         return(NAD_list_details)
     except:
-        print('An error has occured trying to fetch the NAD list')
+        print('\033[1;31mAn error has occured trying to fetch the NAD list\033[0m')
         return({'ERROR', 'ERROR'})
 
 
@@ -93,7 +93,7 @@ def get_ise_group_id(group_name: str):
         print(f"ISE endpoint group {group_name}, id: {group_id}")
         return(group_id)
     else:
-        print(f"ERROR: Group {group_name} was not found")
+        print(f"\033[1;31mERROR: Group {group_name} was not found\033[0m")
         return("ERROR")
 
 
@@ -167,7 +167,7 @@ def initialize_ise(name, passw):
        print(f"User {name} has suffecient permissions to login to ISE") 
        return("Done")
     else:
-        print(f"ERROR: Can't access ISE/failed User. Code: {Iresponse.status_code}")
+        print(f"\033[1;31mERROR: Can't access ISE/failed User. Code: {Iresponse.status_code}\033[0m")
         return("ERROR")
 
 
@@ -231,7 +231,7 @@ def get_device_auth_sessions(device_ip: str):
         ip = IPAddress(device_ip)
         print(f'The IP address is {ip.format()}')
     except:
-        print('Error, invalid device IP address')
+        print('\033[1;31mError, invalid device IP address\033[0m')
         return("ERROR: Invalid IP address")
     testbed_input = testbed_template
     testbed_input['devices']['device']['connections']['cli']['ip'] = ip.format()
@@ -240,15 +240,15 @@ def get_device_auth_sessions(device_ip: str):
     try:
         device.connect(via='cli', learn_hostname=True)
     except:
-        print(f"ERROR: Problem connecting to {device_ip}...")
+        print(f"\033[1;31mERROR: Problem connecting to {device_ip}...\033[0m")
         return([f"ERROR: Problem connecting to {device_ip}..."])
     try:
         auth_sessions = device.parse('show authentication sessions')
     except SchemaEmptyParserError:
-        print(f"ERROR: No authentication sessions on {device_ip}.")
+        print(f"\033[1;31mERROR: No authentication sessions on {device_ip}.\033[0m")
         return([f"ERROR: No authentication sessions on {device_ip}."])
     except:
-        print(f"ERROR: Problem parsing information from {device_ip}.")
+        print(f"\033[1;31mERROR: Problem parsing information from {device_ip}.\033[0m")
         return([f"ERROR: Problem parsing information from {device_ip}."])
     relevant_sessions = []
     for interface in auth_sessions['interfaces']:
@@ -292,7 +292,7 @@ def format_mac(mac_address: str):
         mac.dialect = mac_cisco
         return(str(mac))
     except:
-        print("ERROR: Invalid mac address")
+        print("\033[1;31m: Invalid mac address\033[0m")
         return("ERROR")
 
 
@@ -333,7 +333,7 @@ def add_voucher(mac_address: str, duration: int, voucher_group: str):
             voucher_list = read_voucher_list()
             if any(mac in voucher['mac'] for voucher in voucher_list):
                 print(
-                    f"ERROR: MAC {mac} already has a voucher. Kindly revoke it first.")
+                    f"\033[1;31mERROR: MAC {mac} already has a voucher. Kindly revoke it first.\033[0m")
                 return(f"ERROR: MAC {mac} already has a voucher. Kindly revoke it first.")
             else:
                 print(
@@ -344,17 +344,17 @@ def add_voucher(mac_address: str, duration: int, voucher_group: str):
                 with open('./data/voucher.json', 'w') as f:
                     json.dump(voucher_list, f)
         except:
-            print("ERROR: Wasn't able to update the voucher file")
+            print("\033[1;31mERROR: Wasn't able to update the voucher file\033[0m")
             return("ERROR: Wasn't able to update the voucher file")
         try:
             # Update ISE
             update_ise_endpoint_group(mac, voucher_group)
             return("Done")
         except:
-            print(f"ERROR: Wasn't able to add {mac} to ISE's voucher list")
+            print(f"\033[1;31mERROR: Wasn't able to add {mac} to ISE's voucher list\033[0m")
             return(f"ERROR: Wasn't able to add {mac} to ISE's voucher list")
     else:
-        print(f"ERROR: Invalid MAC address: {mac_address}")
+        print(f"\033[1;31mERROR: Invalid MAC address: {mac_address}\033[0m")
         return("ERROR: Invalid MAC address")
 
 
@@ -377,9 +377,9 @@ def revoke_voucher(mac_address: str):
                     with open('./data/voucher.json', 'w') as f:
                         json.dump(voucher_list, f)
         else:
-            print(f"ERROR: MAC address {mac} not found on the voucher list")
+            print(f"\033[1;31mERROR: MAC address {mac} not found on the voucher list\033[0m")
     except:
-        print("ERROR: Wasn't able to update the voucher file")
+        print("\033[1;31mERROR: Wasn't able to update the voucher file\033[0m")
         return("ERROR: Wasn't able to update the voucher file")
     try:
         # Update ISE
@@ -387,7 +387,7 @@ def revoke_voucher(mac_address: str):
         remove_ise_endpoint_group(mac_address, voucher_group)
         return("Done")
     except:
-        print(f"ERROR: Wasn't able to remove {mac} from ISE's voucher list")
+        print(f"\033[1;31mERROR: Wasn't able to remove {mac} from ISE's voucher list\033[0m")
         return(f"ERROR: Wasn't able to remove {mac} from ISE's voucher list")
 
 
