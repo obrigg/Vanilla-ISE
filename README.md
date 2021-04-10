@@ -30,7 +30,10 @@ Using Cisco ISE's open APIs, primarily ERS (External RESTful Services), we have 
 * Grant and revoke network access "vouchers".
 <img src="img/voucher list.png">
 <img src="img/add voucher.png">
-
+* MAB endpoints' profile clean-up service.
+Based on customers' requests to re-profile certain MAB endpoints once they've gone off the network and back on, this service will delete offline endpoints from endpoint groups tagged with #cleanup in their desctiption. 
+When the endpoint will re-connect to the network, it will be profiled from scratch.
+* Vanilla ISE now requires authentication. Use the your ISE credentials to authenticate to Vanilla ISE.
 ##### Communication with the devices, and data parsing is powered by <img src="/img/pyats.png">
 More information about pyATS is available at: https://developer.cisco.com/pyats/
 ## Running vanilla ISE:
@@ -88,4 +91,3 @@ reserved. Unless required by applicable law or agreed to separately in
 writing, software distributed under the License is distributed on an "AS
 IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 or implied.
-# VanillaLogin

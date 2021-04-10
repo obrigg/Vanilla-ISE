@@ -15,6 +15,7 @@ or implied.
 from flask import Flask, render_template, request, url_for, redirect, session
 from requests.auth import HTTPBasicAuth
 import backend
+import mab_cleanup
 from time import ctime, sleep, time
 from threading import Thread
 
@@ -62,6 +63,11 @@ def voucher_cleanup_loop():
         backend.voucher_cleanup()
         sleep(10*60)
 
+
+def mab_cleanup_loop():
+    while True:
+        mab_cleanup.main()
+        sleep(10*60)
 
 # Routes
 @app.route('/', methods=['GET', 'POST'])
@@ -237,6 +243,8 @@ def login():
 
 # Main Function
 if __name__ == "__main__":
-    t = Thread(target=voucher_cleanup_loop)
-    t.start()
+    t1 = Thread(target=voucher_cleanup_loop)
+    t1.start()
+    t2 = Thread(target=mab_cleanup_loop)
+    t2.start()
     app.run(host='0.0.0.0', debug=True, threaded=True)

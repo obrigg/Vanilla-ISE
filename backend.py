@@ -305,18 +305,18 @@ def read_voucher_list():
     ]
     '''
     try:
-        print("Reading the voucher list...")
+        print("\033[0;33mReading the voucher list...\033[0m")
         with open('./data/voucher.json', 'r') as f:
             voucher_list = json.loads(f.read())
     except:
-        print("Looks like the voucher list does not exist. Creating a new one...")
+        print("\033[0;33mLooks like the voucher list does not exist. Creating a new one...\033[0m")
         with open('./data/voucher.json', 'w') as f:
             voucher_list = []
             json.dump(voucher_list, f)
-    print(f"Voucher list content (Current Epoch time: {int(time())}):\
+    print(f"\033[0;33mVoucher list content (Current Epoch time: {int(time())}):\
         \n=======================")
     pprint(voucher_list)
-    print("=======================")
+    print("=======================\033[0m")
     return(voucher_list)
 
 
@@ -396,12 +396,12 @@ def voucher_cleanup():
     This function will go through the voucher list and remove endpoints
     with an expired voucher from ISE's endpoint group.
     '''
-    print("About to clean up the voucher list...")
+    print("\033[0;35mAbout to clean up the voucher list...\033[0m")
     voucher_list = read_voucher_list()
     for voucher in voucher_list:
         if voucher['duration'] < int(time()):
             print(
-                f"Removing expired voucher of {voucher['mac']} from voucher group {voucher['group']}.")
+                f"\033[0;35mRemoving expired voucher of {voucher['mac']} from voucher group {voucher['group']}.\033[0m")
             revoke_voucher(voucher['mac'])
 
 
