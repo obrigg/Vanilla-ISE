@@ -64,11 +64,6 @@ def voucher_cleanup_loop():
         sleep(10*60)
 
 
-def mab_cleanup_loop():
-    while True:
-        mab_cleanup.main()
-        sleep(10*60)
-
 # Routes
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -245,6 +240,4 @@ def login():
 if __name__ == "__main__":
     t1 = Thread(target=voucher_cleanup_loop)
     t1.start()
-    t2 = Thread(target=mab_cleanup_loop)
-    t2.start()
     app.run(host='0.0.0.0', debug=True, threaded=True)
