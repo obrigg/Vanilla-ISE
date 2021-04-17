@@ -45,10 +45,11 @@
                         <table class="table table--lined table--selectable table">
                             <thead>
                                 <tr>
-                                    <th class="w-25">MAC Address</span></th>
-                                    <th class="w-25">Voucher Group</span></th>
-                                    <th class="w-25">Expiration Time (UTC)</th>
-                                    <th class="w-25">Revoke</th>
+                                    <th class="w-20">MAC Address</span></th>
+                                    <th class="w-20">Voucher Group</span></th>
+                                    <th class="w-20">Expiration Time (UTC)</th>
+                                    <th class="w-20">Created by</th>
+                                    <th class="w-20">Revoke</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -64,6 +65,9 @@
                                     </td>
                                     <td>
                                         {{voucher.ExpDate}}
+                                    </td>
+                                    <td>
+                                        {{voucher.user}}
                                     </td>
                                     <td>
                                         <button name="voucher_sumbit" value="{{voucher.MACAddress}}"

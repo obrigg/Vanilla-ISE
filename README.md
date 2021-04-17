@@ -30,7 +30,8 @@ Using Cisco ISE's open APIs, primarily ERS (External RESTful Services), we have 
 * Grant and revoke network access "vouchers".
 <img src="img/voucher list.png">
 <img src="img/add voucher.png">
-* Vanilla ISE now requires authentication. Use the your ISE credentials to authenticate to Vanilla ISE.
+* **Vanilla ISE now requires authentication**. Use the your ISE credentials to authenticate to Vanilla ISE.
+* Auditing: Vanilla ISE will keep track of the users creating and revoking vouchers, as well as send audit messages to a syslog server configured in the environment variables.
 ##### Communication with the devices, and data parsing is powered by <img src="/img/pyats.png">
 More information about pyATS is available at: https://developer.cisco.com/pyats/
 ## Running vanilla ISE:
@@ -58,13 +59,11 @@ Note: its good practice to disable CSRF to make sure you are able to authenticat
 ISE_IP= <ISE hostname/IP>
 ISE_USER= <ISE username>
 ISE_PASSWORD= <ISE password>
+SYSLOG_SERVER= <Syslog server IP, for auditing>
 SWITCH_USER= <username for network devices>
 SWITCH_PASS= <password for network devices>
 SWITCH_ENABLE= <enable password for network devices>
 ```
-
-### Create a Docker image
-`docker build -t vanilla-ise .`
 
 ### Run the Docker
 `docker run -d --env-file <path to env file> -v <path to data dir>:/Vanilla-ISE/data obrigg/vanilla-ise`
@@ -74,7 +73,7 @@ running the Docker in interactive mode:
 
 ----
 ### Licensing info
-Copyright (c) 2020 Cisco and/or its affiliates.
+Copyright (c) 2021 Cisco and/or its affiliates.
 
 This software is licensed to you under the terms of the Cisco Sample
 Code License, Version 1.1 (the "License"). You may obtain a copy of the

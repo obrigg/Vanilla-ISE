@@ -4,9 +4,9 @@ import os
 import requests
 import json
 import xmltodict
+import logging.handlers
 from time import time
 from netaddr import *
-from pprint import pprint
 from genie.testbed import load
 from requests.auth import HTTPBasicAuth
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
@@ -19,6 +19,7 @@ base_url = "https://" + os.environ.get('ISE_IP', "") + ":9060/ers/config/"
 switch_user = os.environ.get('SWITCH_USER', "netadmin")
 switch_password = os.environ.get('SWITCH_PASS', "")
 switch_enable = os.environ.get('SWITCH_ENABLE', "")
+syslog_server = os.environ.get('SYSLOG_SERVER', "")
 voucher_group_A = "AAA-Vouchers"
 voucher_group_B = "BBB-Vouchers"
 voucher_group_C = "CCC-Vouchers"
@@ -46,6 +47,15 @@ testbed_template = {'devices': {
         },
         'os': 'iosxe'
     }}}
+
+if syslog_server != "":
+    # Creating the logger
+    syslog_logger = logging.getLogger('syslog_logger')
+    syslog_logger.setLevel(logging.INFO)
+    #Creating the logging handler, directing to the syslog server
+    handler = logging.handlers.SysLogHandler(address=(syslog_server,514))
+    syslog_logger.addHandler(handler)
+        
 ######   End of envrionment setup   ######
 
 ######         ISE functions        ######
@@ -300,27 +310,28 @@ def read_voucher_list():
     '''
     Voucher file format:
     [
-        {"mac": "00:11:22:33:44:55", "duration": 1617292081, "group": "AAA-Vouchers"},
-        {"mac": "11:22:33:44:55:66", "duration": 1617293054, "group": "BBB-Vouchers"}
+        {"mac": "00:11:22:33:44:55", "duration": 1617292081, "group": "AAA-Vouchers", "user": "Oren"},
+        {"mac": "11:22:33:44:55:66", "duration": 1617293054, "group": "BBB-Vouchers", "user": "Ramona"}
     ]
     '''
     try:
-        print("\033[0;33mReading the voucher list...\033[0m")
+        print("Reading the voucher list...")
         with open('./data/voucher.json', 'r') as f:
             voucher_list = json.loads(f.read())
     except:
-        print("\033[0;33mLooks like the voucher list does not exist. Creating a new one...\033[0m")
+        print("Looks like the voucher list does not exist. Creating a new one...")
         with open('./data/voucher.json', 'w') as f:
             voucher_list = []
             json.dump(voucher_list, f)
-    print(f"\033[0;33mVoucher list content (Current Epoch time: {int(time())}):\
+    print(f"Voucher list content (Current Epoch time: {int(time())}):\
         \n=======================")
-    pprint(voucher_list)
-    print("=======================\033[0m")
+    for voucher in voucher_list:
+        print(voucher)
+    print("=======================")
     return(voucher_list)
 
 
-def add_voucher(mac_address: str, duration: int, voucher_group: str):
+def add_voucher(mac_address: str, duration: int, voucher_group: str, user: str):
     '''
     This function will receive an endpoint MAC address, add it to ISE's
     voucher endpoint group, and add an entry to the voucher list file 
@@ -337,9 +348,10 @@ def add_voucher(mac_address: str, duration: int, voucher_group: str):
                 return(f"ERROR: MAC {mac} already has a voucher. Kindly revoke it first.")
             else:
                 print(
-                    f"Adding MAC {mac} with a duration of {duration} hours to the voucher group {voucher_group}")
+                    f"Adding MAC {mac} with a duration of {duration} hours to the voucher group {voucher_group}, user: {user}")
                 voucher = {"mac": mac, "duration": int(
-                    time()) + duration*60*60, "group": voucher_group}
+                    time()) + duration*60*60, "group": voucher_group, 
+                    "user": user}
                 voucher_list.append(voucher)
                 with open('./data/voucher.json', 'w') as f:
                     json.dump(voucher_list, f)
@@ -349,6 +361,7 @@ def add_voucher(mac_address: str, duration: int, voucher_group: str):
         try:
             # Update ISE
             update_ise_endpoint_group(mac, voucher_group)
+            send_syslog(f"Voucher created! MAC: {mac}, duration: {duration} hours, voucher group: {voucher_group}, user: {user}")
             return("Done")
         except:
             print(f"\033[1;31mERROR: Wasn't able to add {mac} to ISE's voucher list\033[0m")
@@ -358,7 +371,7 @@ def add_voucher(mac_address: str, duration: int, voucher_group: str):
         return("ERROR: Invalid MAC address")
 
 
-def revoke_voucher(mac_address: str):
+def revoke_voucher(mac_address: str, user="system"):
     '''
     This function will receive an endpoint MAC address, remove it from 
     ISE's voucher endpoint group, and from the voucher list file.
@@ -385,6 +398,7 @@ def revoke_voucher(mac_address: str):
         # Update ISE
         print(f"Deleting MAC {mac} from ISE")
         remove_ise_endpoint_group(mac_address, voucher_group)
+        send_syslog(f"Voucher revoked! MAC: {mac}, user: {user}")
         return("Done")
     except:
         print(f"\033[1;31mERROR: Wasn't able to remove {mac} from ISE's voucher list\033[0m")
@@ -396,13 +410,24 @@ def voucher_cleanup():
     This function will go through the voucher list and remove endpoints
     with an expired voucher from ISE's endpoint group.
     '''
-    print("\033[0;35mAbout to clean up the voucher list...\033[0m")
+    print("\033[0;35mAbout to clean up the voucher list...")
     voucher_list = read_voucher_list()
     for voucher in voucher_list:
         if voucher['duration'] < int(time()):
             print(
-                f"\033[0;35mRemoving expired voucher of {voucher['mac']} from voucher group {voucher['group']}.\033[0m")
-            revoke_voucher(voucher['mac'])
+                f"\033[0;35mRemoving expired voucher of {voucher['mac']} from voucher group {voucher['group']}.")
+            revoke_voucher(voucher['mac'], "Timer")
+            print("Clean-up done.\033[0m")
+
+
+def send_syslog(data: str):
+    '''
+    This fuction will send a preconfigured syslog server messages (if syslog server is configured)
+    '''
+    if syslog_server != "":
+        print(f"Sending syslog server {syslog_server} the following message: \
+            \n{data}")
+        syslog_logger.info(str(data))
 
 
 if __name__ == "__main__":

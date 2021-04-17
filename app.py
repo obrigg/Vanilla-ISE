@@ -32,8 +32,8 @@ def convert_voucher_list(voucher_list):
     and expire timestamps (in seconds since the epoch, in UTC) and convert it
     to MAC addresses (in the format xx:xx:xx:xx:xx:xx) and expire dates (as strings in local time).
     In: {"xxxx.xxxx.xxxx": 1613129301.6337228, "xxxx.xxxx.xxxx": 1613129332.6337228}
-    Out:[{'MACAddress': 'xx:xx:xx:xx:xx:xx', 'ExpDate': 'Fri Feb 12 12:28:21 2021', 'group': 'AAA-Vouchers'},
-        {'MACAddress': 'xx:xx:xx:xx:xx:xx', 'ExpDate': 'Fri Feb 12 18:28:21 2021', 'group': 'BBB-Vouchers'}]
+    Out:[{'MACAddress': 'xx:xx:xx:xx:xx:xx', 'ExpDate': 'Fri Feb 12 12:28:21 2021', 'group': 'AAA-Vouchers', 'user': 'Oren'},
+        {'MACAddress': 'xx:xx:xx:xx:xx:xx', 'ExpDate': 'Fri Feb 12 18:28:21 2021', 'group': 'BBB-Vouchers', 'user': 'Ramona'}]
     '''
     converted_voucher_list = []
 
@@ -43,8 +43,9 @@ def convert_voucher_list(voucher_list):
         mac_address = ':'.join(dot_free_mac[i:i+2] for i in range(0, 12, 2))
         exp_date = ctime(voucher['duration'])
         voucher_group = voucher['group']
+        user = voucher['user']
         converted_voucher_list.append(
-            {"MACAddress": mac_address, "ExpDate": exp_date, "group": voucher_group})
+            {"MACAddress": mac_address, "ExpDate": exp_date, "group": voucher_group, "user": user})
 
     return converted_voucher_list
 
@@ -75,7 +76,7 @@ def index():
     '''
     if type(session.get('logged_in')) == int and session.get('logged_in') > int(time()):
         session['logged_in'] = int(time()) + backend.timeout
-        print(f"Login extended until: {ctime(session['logged_in'])}")
+        print(f"Login for {session['username']} extended until: {ctime(session['logged_in'])}")
         try:
             if request.method == 'GET':
 
@@ -110,7 +111,7 @@ def deviceQuery():
     '''
     if type(session.get('logged_in')) == int and session.get('logged_in') > int(time()):
         session['logged_in'] = int(time()) + backend.timeout
-        print(f"Login extended until: {ctime(session['logged_in'])}")
+        print(f"Login for {session['username']} extended until: {ctime(session['logged_in'])}")
         try:
             if request.method == 'GET':
 
@@ -141,7 +142,7 @@ def voucher():
     '''
     if type(session.get('logged_in')) == int and session.get('logged_in') > int(time()):
         session['logged_in'] = int(time()) + backend.timeout
-        print(f"Login extended until: {ctime(session['logged_in'])}")
+        print(f"Login for {session['username']} extended until: {ctime(session['logged_in'])}")
         try:
             if request.method == 'GET':
 
@@ -162,7 +163,8 @@ def voucher():
                 if(submit_type == "Add"):
 
                     add_response = backend.add_voucher(
-                        form_mac_address, int(voucher_duration), voucher_group)
+                        form_mac_address, int(voucher_duration), 
+                        voucher_group, session['username'])
                     propagate_backend_exception(add_response)
                     voucher_list = convert_voucher_list(
                         backend.read_voucher_list())
@@ -172,7 +174,7 @@ def voucher():
 
                 else:  # Revoke
 
-                    revoke_response = backend.revoke_voucher(row_mac_address)
+                    revoke_response = backend.revoke_voucher(row_mac_address, session['username'])
                     propagate_backend_exception(revoke_response)
                     voucher_list = convert_voucher_list(
                         backend.read_voucher_list())
@@ -196,7 +198,7 @@ def endpointQuery():
     '''
     if type(session.get('logged_in')) == int and session.get('logged_in') > int(time()):
         session['logged_in'] = int(time()) + backend.timeout
-        print(f"Login extended until: {ctime(session['logged_in'])}")
+        print(f"Login for {session['username']} extended until: {ctime(session['logged_in'])}")
         try:
             if request.method == 'GET':
 
@@ -229,6 +231,7 @@ def login():
         if x == "Done":
             print("login view - Successful Login")
             session['logged_in'] = int(time()) + backend.timeout
+            session['username'] = name
             print(f"Logged in until: {ctime(session['logged_in'])}")
             return redirect(url_for('index'))
         else:
@@ -240,4 +243,5 @@ def login():
 if __name__ == "__main__":
     t1 = Thread(target=voucher_cleanup_loop)
     t1.start()
-    app.run(host='0.0.0.0', debug=True, threaded=True)
+    sleep(1)
+    app.run(host='0.0.0.0', debug=False, threaded=True)
