@@ -1,6 +1,7 @@
 <img src="img/vanilla_ISE_logo.png">
 
 ##### Your endpoint specialists will thank you later...
+[![published](https://static.production.devnetcloud.com/codeexchange/assets/images/devnet-published.svg)](https://developer.cisco.com/codeexchange/github/repo/obrigg/Vanilla-ISE)
 ## The Challenge
 
 Cisco ISE (Identity Services Engine) is **THE** policy engine for your network. It provides many (many) different services that are all required to meet today's user expectations while protecting the organization from threats:
