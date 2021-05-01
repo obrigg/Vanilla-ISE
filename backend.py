@@ -247,13 +247,24 @@ def get_device_auth_sessions(device_ip: str):
     testbed_input['devices']['device']['connections']['cli']['ip'] = ip.format()
     testbed = load(testbed_input)
     device = testbed.devices['device']
+    # Connect to the device
     try:
         device.connect(via='cli', learn_hostname=True)
     except:
         print(f"\033[1;31mERROR: Problem connecting to {device_ip}...\033[0m")
         return([f"ERROR: Problem connecting to {device_ip}..."])
+    # Get authentication sessions
     try:
         auth_sessions = device.parse('show authentication sessions')
+    except SchemaEmptyParserError:
+        print(f"\033[1;31mERROR: No authentication sessions on {device_ip}.\033[0m")
+        return([f"ERROR: No authentication sessions on {device_ip}."])
+    except:
+        print(f"\033[1;31mERROR: Problem parsing information from {device_ip}.\033[0m")
+        return([f"ERROR: Problem parsing information from {device_ip}."])
+    # Get interfaces' vlan assignments
+    try:
+        interfaces_status = device.parse('show interfaces status')
     except SchemaEmptyParserError:
         print(f"\033[1;31mERROR: No authentication sessions on {device_ip}.\033[0m")
         return([f"ERROR: No authentication sessions on {device_ip}."])
@@ -272,7 +283,8 @@ def get_device_auth_sessions(device_ip: str):
                            'Method': auth_sessions['interfaces'][interface]['client'][client]['method'],
                            'Username': auth_details['interfaces'][interface]['mac_address'][client]['user_name'],
                            'IPv4': auth_details['interfaces'][interface]['mac_address'][client]['ipv4_address'],
-                           'NICVendor': EUI(client).oui.registration()['org']
+                           'NICVendor': EUI(client).oui.registration()['org'],
+                           'Vlan': interfaces_status['interfaces'][interface]['vlan']
                            }
                 try:
                     if "local_policies" in auth_details['interfaces'][interface]['mac_address'][client]:
