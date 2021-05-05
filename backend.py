@@ -72,18 +72,24 @@ def get_all_NADs():
     'Cat9K-2.lab.cisco.com': '10.255.7.14',
     'Metro-3850': '10.7.250.200'}
     '''
-    url = base_url + 'networkdevice/'
+    url = base_url + 'networkdevice/?size=100'
     print(f'About to fetch the NAD list from {url}')
     try:
-        NAD_list = requests.get(url=url, headers=headers,
-                                auth=auth, verify=False).json()
+        isDone = False
         NAD_list_details = {}
-        for NAD in NAD_list['SearchResult']['resources']:
-            nad_url = url + NAD['id']
-            NAD_details = requests.get(
-                url=url+NAD['id'], headers=headers, auth=auth, verify=False).json()
-            NAD_list_details[NAD_details['NetworkDevice']['name']
-                             ] = NAD_details['NetworkDevice']['NetworkDeviceIPList'][0]['ipaddress']
+        while not isDone:
+            NAD_list = requests.get(url=url, headers=headers, auth=auth, verify=False).json()
+            for NAD in NAD_list['SearchResult']['resources']:
+                nad_url = base_url + 'networkdevice/' + NAD['id']
+                NAD_details = requests.get(
+                    url=nad_url, headers=headers, auth=auth, verify=False).json()
+                NAD_list_details[NAD_details['NetworkDevice']['name']
+                                ] = NAD_details['NetworkDevice']['NetworkDeviceIPList'][0]['ipaddress']
+            if 'nextPage' in NAD_list['SearchResult'].keys():
+                url = NAD_list['SearchResult']['nextPage']['href']
+            else:
+                isDone = True
+        
         print(f"Found {len(NAD_list_details)} NADs.")
         return(NAD_list_details)
     except:
