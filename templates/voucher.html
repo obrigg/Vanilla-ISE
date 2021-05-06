@@ -19,6 +19,8 @@
 
             <!--Alert for error message-->
             {% include "alert.html" %}
+            
+            <input type="text" id="VoucherInput" onkeyup="SearchFunction()" placeholder="Search voucher">
 
             {%if new_voucher%}
                 <div class="alert alert--success">
@@ -42,7 +44,7 @@
                 <form id="voucher_revoke_form" action="/voucher" method="POST">
 
                     <div class="responsive-table">
-                        <table class="table table--lined table--selectable table">
+                        <table class="table table--lined table--selectable table" id="VoucherTable">
                             <thead>
                                 <tr>
                                     <th class="w-20">MAC Address</span></th>
@@ -156,6 +158,26 @@
         </div>
     </div>
 </div>
+<script>
+    function SearchFunction() {
+        var input, filter, table, tr, td, i, txtValue;
+        input = document.getElementById("VoucherInput");
+        filter = input.value.toUpperCase();
+        table = document.getElementById("VoucherTable");
+        tr = table.getElementsByTagName("tr");
+        for (i = 0; i < tr.length; i++) {
+            td = tr[i].getElementsByTagName("td")[0];
+            if (td) {
+                txtValue = td.textContent || td.innerText;
+                if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+        }
+    }
+</script>
 
 {% endblock %}
 

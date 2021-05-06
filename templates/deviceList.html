@@ -2,70 +2,90 @@
     The redirection can be manually triggered by a "Query Device" link in each table row and thereby 
     for each NAD device. -->
 
-{% extends "masterPage.html" %}
+    {% extends "masterPage.html" %}
 
-{% block content %}
-<div class="row">
-
-    <!-- Left Rail -->
-    {% include "menu.html" %}
-
-    <!-- Middle + Right Rail -->
-    <div class="col-9 col-xl-10 col-md-9">
-        <div class="section">
-            
-            <div class="headline">
-                <h2>Device List</h2>
-            </div>
-
-            <!--Alert for error message-->
-            {% include "alert.html" %}
-
-            <form action="/" method="POST">
-
-                {% if device_list and error != true %}
-
-                <div class="responsive-table">
-                    <table class="table table--lined table--selectable">
-                        <thead>
-                            <tr>
-                                <th class="w-33">Device Name</th>
-                                <th class="w-33">Device IP</th>
-                                <th class="w-33">Query</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-
-                            {% for key, value in device_list.items() %}
-                                <tr>
-                                    <td>
-                                        {{key}}
-                                    </td>
-                                    <td>
-                                        {{value}}
-                                    </td>
-                                    <td>
-                                        <button name="ip_address" value={{value}} class="btn btn--link link_btn"
-                                            type="submit" onclick="showLoadingText(this)"
-                                            onload="showOriginalText(this, 'Query')">Query
-                                            Device</button>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-
-                        </tbody>
-                    </table>
+    {% block content %}
+    <div class="row">
+    
+        <!-- Left Rail -->
+        {% include "menu.html" %}
+    
+        <!-- Middle + Right Rail -->
+        <div class="col-9 col-xl-10 col-md-9">
+            <div class="section">
+                
+                <div class="headline">
+                    <h2>Device List</h2>
                 </div>
-
-                {% else %}
-                    <div class="no_query">
-                        No devices available.
+    
+                <!--Alert for error message-->
+                {% include "alert.html" %}
+                <input type="text" id="SwitchInput" onkeyup="SearchFunction()" placeholder="Search for device">
+    
+                <form action="/" method="POST">
+    
+                    {% if device_list and error != true %}
+    
+                    <div class="responsive-table">
+                        <table class="table table--lined table--selectable" id="SwitchTable" >
+                            <thead>
+                                <tr>
+                                    <th class="w-33">Device Name</th>
+                                    <th class="w-33">Device IP</th>
+                                    <th class="w-33">Query</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+    
+                                {% for key, value in device_list.items() %}
+                                    <tr>
+                                        <td>
+                                            {{key}}
+                                        </td>
+                                        <td>
+                                            {{value}}
+                                        </td>
+                                        <td>
+                                            <button name="ip_address" value={{value}} class="btn btn--link link_btn"
+                                                type="submit" onclick="showLoadingText(this)"
+                                                onload="showOriginalText(this, 'Query')">Query
+                                                Device</button>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+    
+                            </tbody>
+                        </table>
                     </div>
-                {% endif %}
-
-            </form>
+    
+                    {% else %}
+                        <div class="no_query">
+                            No devices available.
+                        </div>
+                    {% endif %}
+    
+                </form>
+            </div>
         </div>
     </div>
-</div>
-
-{% endblock %}
+    <script>
+        function SearchFunction() {
+            var input, filter, table, tr, td, i, txtValue;
+            input = document.getElementById("SwitchInput");
+            filter = input.value.toUpperCase();
+            table = document.getElementById("SwitchTable");
+            tr = table.getElementsByTagName("tr");
+            for (i = 0; i < tr.length; i++) {
+                td = tr[i].getElementsByTagName("td")[0];
+                if (td) {
+                    txtValue = td.textContent || td.innerText;
+                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        tr[i].style.display = "";
+                    } else {
+                        tr[i].style.display = "none";
+                    }
+                }
+            }
+        }
+    </script>
+    {% endblock %}
