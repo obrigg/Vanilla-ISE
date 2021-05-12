@@ -66,8 +66,27 @@ def voucher_cleanup_loop():
 
 
 # Routes
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/', methods=['GET'])
 def index():
+    '''
+    This function shows an empty welcome page (GET)
+    '''
+    if type(session.get('logged_in')) == int and session.get('logged_in') > int(time()):
+        session['logged_in'] = int(time()) + backend.timeout
+        print(f"Login for {session['username']} extended until: {ctime(session['logged_in'])}")
+        try:
+            if request.method == 'GET':
+                return render_template('welcome.html')
+
+        except Exception as e:
+            print(e)
+            return render_template('endpointQuery.html', error=True, errorcode=e)
+    else:
+        print("First you need to login")
+        return redirect(url_for('login'))
+
+@app.route('/deviceList', methods=['GET', 'POST'])
+def deviceList():
     '''
     This function will show all NAD devices in a table (GET request) and
     redirect to the specific query page of a device (POST request). The redirection

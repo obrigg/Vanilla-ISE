@@ -1,4 +1,9 @@
 # Change log
+##### 12-May-2021
+* Added a welcome page, to avoid loading delay for networks with many NADs.
+* Added jquery as a local file.
+* Changed `show authentication session` to `show access-session` command to support older switches.
+
 ##### 6-May-2021
 * Added search bar for the device list and voucher list.
 

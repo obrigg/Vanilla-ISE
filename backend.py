@@ -261,10 +261,10 @@ def get_device_auth_sessions(device_ip: str):
         return([f"ERROR: Problem connecting to {device_ip}..."])
     # Get authentication sessions
     try:
-        auth_sessions = device.parse('show authentication sessions')
+        auth_sessions = device.parse('show access-session')
     except SchemaEmptyParserError:
-        print(f"\033[1;31mERROR: No authentication sessions on {device_ip}.\033[0m")
-        return([f"ERROR: No authentication sessions on {device_ip}."])
+        print(f"\033[1;31mERROR: No access sessions on {device_ip}.\033[0m")
+        return([f"ERROR: No access sessions on {device_ip}."])
     except:
         print(f"\033[1;31mERROR: Problem parsing information from {device_ip}.\033[0m")
         return([f"ERROR: Problem parsing information from {device_ip}."])
@@ -272,8 +272,8 @@ def get_device_auth_sessions(device_ip: str):
     try:
         interfaces_status = device.parse('show interfaces status')
     except SchemaEmptyParserError:
-        print(f"\033[1;31mERROR: No authentication sessions on {device_ip}.\033[0m")
-        return([f"ERROR: No authentication sessions on {device_ip}."])
+        print(f"\033[1;31mERROR: No access sessions on {device_ip}.\033[0m")
+        return([f"ERROR: No access sessions on {device_ip}."])
     except:
         print(f"\033[1;31mERROR: Problem parsing information from {device_ip}.\033[0m")
         return([f"ERROR: Problem parsing information from {device_ip}."])

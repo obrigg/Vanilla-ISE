@@ -1,0 +1,20 @@
+<!-- Empty welcome page, the first screen a user will receive upon successful authentication. -->
+
+    {% extends "masterPage.html" %}
+
+    {% block content %}
+    <div class="row">
+    
+        <!-- Left Rail -->
+        {% include "menu.html" %}
+    
+        <!-- Middle + Right Rail -->
+        <div class="col-9 col-xl-10 col-md-9">
+            <div class="section">
+                <div class="headline">
+                    <h2>Welcome to Vanilla ISE!</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endblock %}
