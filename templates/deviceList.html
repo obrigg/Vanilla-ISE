@@ -22,7 +22,7 @@
                 {% include "alert.html" %}
                 <input type="text" id="SwitchInput" onkeyup="SearchFunction()" placeholder="Search for device">
     
-                <form action="/" method="POST">
+                <form action="/deviceList" method="POST">
     
                     {% if device_list and error != true %}
     
