@@ -1,5 +1,2 @@
-flask
-requests
-xmltodict
-netaddr
 pyats[library]
+flask==1.1.4
