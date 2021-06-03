@@ -282,7 +282,7 @@ def get_device_auth_sessions(device_ip: str):
         for client in auth_sessions['interfaces'][interface]['client']:
             if auth_sessions['interfaces'][interface]['client'][client]['domain'] != "UNKNOWN":
                 auth_details = device.parse(
-                    f"show authentication sessions interface {interface} details")
+                    f"show access-session interface {interface} details")
                 session = {'Interface': interface,
                            'EndpointMAC': client,
                            'Status': auth_sessions['interfaces'][interface]['client'][client]['status'],
