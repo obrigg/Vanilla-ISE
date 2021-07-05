@@ -1,12 +1,14 @@
-from genie.metaparser.util.exceptions import SchemaEmptyParserError
 import re
+from genie.metaparser.util.exceptions import SchemaEmptyParserError
 import os
 import requests
 import json
 import xmltodict
+import asyncio
 import logging.handlers
-from time import time
+from time import time, sleep
 from netaddr import *
+from aiohttp import ClientSession, ClientTimeout, BasicAuth
 from genie.testbed import load
 from requests.auth import HTTPBasicAuth
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
@@ -24,8 +26,12 @@ voucher_group_A = "AAA-Vouchers"
 voucher_group_B = "BBB-Vouchers"
 voucher_group_C = "CCC-Vouchers"
 timeout = 15 * 60 # in minutes
+batch = 50
+parse_command = "authentication session"    # 'access-session' or 'authentication session'
+                                            # Some old switches do not support 'authentication session'
 
 auth = HTTPBasicAuth(ise_user, ise_password)
+async_auth = BasicAuth(ise_user, ise_password)
 headers = {"Content-Type": "application/json",
            "Accept": "application/json"}
 
@@ -58,6 +64,44 @@ if syslog_server != "":
         
 ######   End of envrionment setup   ######
 
+######       Async functions        ######
+
+async def fetch(NAD, session):
+    nad_url = base_url + 'networkdevice/' + NAD['id']
+    try:
+        async with session.get(nad_url, headers=headers, auth=async_auth, verify_ssl=False) as response:
+            json_resp = await response.json()
+            NAD_list_details[json_resp['NetworkDevice']['name']] = json_resp['NetworkDevice']['NetworkDeviceIPList'][0]['ipaddress']
+            return await response.json()
+    except:
+        print("Error")
+        return(None)
+
+
+async def bound_fetch(sem, NAD, session):
+    # Getter function with semaphore.
+    async with sem:
+        await fetch(NAD, session)
+
+
+async def get_NAD_details():
+    tasks = []
+    # create instance of Semaphore
+    sem = asyncio.Semaphore(batch)
+
+    # Create client session that will ensure we dont open new connection
+    # per each request.
+    async with ClientSession() as session:
+        for NAD in complete_NAD_list:
+            # pass Semaphore and session to every GET request
+            task = asyncio.ensure_future(bound_fetch(sem, NAD, session))
+            tasks.append(task)
+
+        responses = asyncio.gather(*tasks)
+        await responses
+
+######    End of Async functions    ######
+
 ######         ISE functions        ######
 
 
@@ -76,21 +120,24 @@ def get_all_NADs():
     print(f'About to fetch the NAD list from {url}')
     try:
         isDone = False
+        global NAD_list_details
+        global complete_NAD_list
         NAD_list_details = {}
+        complete_NAD_list = []
         while not isDone:
             NAD_list = requests.get(url=url, headers=headers, auth=auth, verify=False).json()
-            for NAD in NAD_list['SearchResult']['resources']:
-                nad_url = base_url + 'networkdevice/' + NAD['id']
-                NAD_details = requests.get(
-                    url=nad_url, headers=headers, auth=auth, verify=False).json()
-                NAD_list_details[NAD_details['NetworkDevice']['name']
-                                ] = NAD_details['NetworkDevice']['NetworkDeviceIPList'][0]['ipaddress']
+            complete_NAD_list += NAD_list['SearchResult']['resources']
             if 'nextPage' in NAD_list['SearchResult'].keys():
                 url = NAD_list['SearchResult']['nextPage']['href']
             else:
-                isDone = True
+                isDone = True       
+        print(f"Found {len(complete_NAD_list)} NADs.")
         
-        print(f"Found {len(NAD_list_details)} NADs.")
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        #loop = asyncio.get_event_loop()
+        future = asyncio.ensure_future(get_NAD_details())
+        loop.run_until_complete(future)
         return(NAD_list_details)
     except:
         print('\033[1;31mAn error has occured trying to fetch the NAD list\033[0m')
@@ -261,7 +308,7 @@ def get_device_auth_sessions(device_ip: str):
         return([f"ERROR: Problem connecting to {device_ip}..."])
     # Get authentication sessions
     try:
-        auth_sessions = device.parse('show access-session')
+        auth_sessions = device.parse(f'show {parse_command}')
     except SchemaEmptyParserError:
         print(f"\033[1;31mERROR: No access sessions on {device_ip}.\033[0m")
         return([f"ERROR: No access sessions on {device_ip}."])
@@ -282,7 +329,7 @@ def get_device_auth_sessions(device_ip: str):
         for client in auth_sessions['interfaces'][interface]['client']:
             if auth_sessions['interfaces'][interface]['client'][client]['domain'] != "UNKNOWN":
                 auth_details = device.parse(
-                    f"show access-session interface {interface} details")
+                    f"show {parse_command} interface {interface} details")
                 session = {'Interface': interface,
                            'EndpointMAC': client,
                            'Status': auth_sessions['interfaces'][interface]['client'][client]['status'],
