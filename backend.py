@@ -341,7 +341,7 @@ def get_device_auth_sessions(device_ip: str):
                            }
                 try:
                     if "local_policies" in auth_details['interfaces'][interface]['mac_address'][client]:
-                        session['Vlan']: auth_details['interfaces'][interface]['mac_address'][client]['local_policies']['vlan_group']['vlan']
+                        session['Vlan'] = auth_details['interfaces'][interface]['mac_address'][client]['local_policies']['vlan_group']['vlan']
                     if "server_policies" in auth_details['interfaces'][interface]['mac_address'][client]:
                         server_policies = auth_details['interfaces'][interface]['mac_address'][client]['server_policies']
                         for policy in server_policies:
