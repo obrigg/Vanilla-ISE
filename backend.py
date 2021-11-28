@@ -43,6 +43,7 @@ testbed_template = {'devices': {
                     'ip': '',
                     'port': 22,
                     'protocol': 'ssh',
+                    'ssh_options': '-o KexAlgorithms=+diffie-hellman-group14-sha1'
                 }
         },
         'credentials': {
@@ -225,12 +226,16 @@ def initialize_ise(name, passw):
     print(f"Logging into ISE with username: {name}")
     url = "https://" + os.environ.get('ISE_IP', "") + ":9060/ers/sdk"
     user_auth = HTTPBasicAuth(name,passw)
-    Iresponse = requests.get(url=url, headers=headers, auth=user_auth, verify=False)
-    if Iresponse.status_code == 200:
-       print(f"User {name} has suffecient permissions to login to ISE") 
-       return("Done")
-    else:
-        print(f"\033[1;31mERROR: Can't access ISE/failed User. Code: {Iresponse.status_code}\033[0m")
+    try:
+        Iresponse = requests.get(url=url, headers=headers, auth=user_auth, verify=False, timeout=5)
+        if Iresponse.status_code == 200:
+            print(f"User {name} has suffecient permissions to login to ISE") 
+            return("Done")
+        else:
+            print(f"\033[1;31mERROR: Can't access ISE/failed User. Code: {Iresponse.status_code}\033[0m")
+            return("ERROR")
+    except requests.exceptions.Timeout:
+        print(f"\033[1;31mTimeout error. Please check ISE connectivity\033[0m")
         return("ERROR")
 
 
