@@ -40,7 +40,6 @@ More information about pyATS is available at: https://developer.cisco.com/pyats/
 There are several options for running vanilla ISE:
 1. Running the code on a computer/server with Python.
 2. Running the code on a Docker container. Requires to <a href="https://docs.docker.com/get-docker/"> install Docker</a>.
-3. Running the code on a Cisco device using Guestshell (Cisco Guestshell is a virtualized Linux-based environment, designed to run custom Linux applications, including Python for automated control and management of Cisco devices). See details below.
 
 ### Enable ISE ERS API
 
@@ -55,7 +54,63 @@ Note: its good practice to disable CSRF to make sure you are able to authenticat
 
 <a href="https://community.cisco.com/t5/security-documents/ise-ers-api-examples/ta-p/3622623#toc-hId--623796905"> Reference to official documentation </a>
 
-### Set a environment variables file
+### Option 1: Running Vanilla ISE on a server/workstation
+#### Virtual Environment
+
+I recommend running Vanilla ISE in a Python virtual environment. This will help keep your host system clean and allow you to have multiple environments to try new things. If you are not using a virtual environment, start at the download/clone step below.
+
+You will also need Python 3 and venv installed on your host system.
+
+In your project directory, create your virtual environment
+``` console
+python3 -m venv env
+```
+Activate the new virtual environment:
+``` console
+source env/bin/activate
+```
+Download or clone the Vanilla ISE repository:
+
+``` console
+git clone https://github.com/obrigg/Vanilla-ISE.git
+```
+Install the required packages
+```
+cd Vanilla-ISE
+pip install -r requirements.txt
+```
+#### Set environment variables (one-time, non-persistent)
+```
+export ISE_IP= <ISE hostname/IP>
+export ISE_USER= <ISE username>
+export ISE_PASSWORD= <ISE password>
+export SYSLOG_SERVER= <Syslog server IP, for auditing>
+export SWITCH_USER= <username for network devices>
+export SWITCH_PASS= <password for network devices>
+export SWITCH_ENABLE= <enable password for network devices>
+```
+#### Set environment variables (persistent, for multiple activations)
+Edit the env/bin/activate file with nano/vi/other editor
+```
+nano env/bin/activate
+```
+Add the following lines to the file, to make the environment variables persist for multiple activations of the environment.
+```
+export ISE_IP= <ISE hostname/IP>
+export ISE_USER= <ISE username>
+export ISE_PASSWORD= <ISE password>
+export SYSLOG_SERVER= <Syslog server IP, for auditing>
+export SWITCH_USER= <username for network devices>
+export SWITCH_PASS= <password for network devices>
+export SWITCH_ENABLE= <enable password for network devices>
+```
+#### Run the code
+```
+python app.py
+```
+
+### Option 2: Running Vanilla ISE as a Docker container
+#### Set a environment variables file
 ```
 ISE_IP= <ISE hostname/IP>
 ISE_USER= <ISE username>
@@ -66,7 +121,7 @@ SWITCH_PASS= <password for network devices>
 SWITCH_ENABLE= <enable password for network devices>
 ```
 
-### Run the Docker
+#### Run the Docker container
 `docker run -d --env-file <path to env file> -v <path to data dir>:/Vanilla-ISE/data obrigg/vanilla-ise`
 
 running the Docker in interactive mode:
