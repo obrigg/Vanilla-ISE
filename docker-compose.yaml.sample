@@ -1,0 +1,17 @@
+version: '3'
+services:
+  vanilla-ise:
+    image: obrigg/vanilla-ise
+    container_name: vanilla-ise
+    environment:
+      - ISE_IP= <ISE hostname/IP>
+      - ISE_USER= <ISE username>
+      - ISE_PASSWORD= <ISE password>
+      - SYSLOG_SERVER= <Syslog server IP, for auditing>
+      - SWITCH_USER= <username for network devices>
+      - SWITCH_PASS= <password for network devices>
+      - SWITCH_ENABLE= <enable password for network devices>
+    volumes:
+      - <path to data dir>:/Vanilla-ISE/data
+    ports:
+      - 5000:5000

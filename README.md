@@ -109,8 +109,8 @@ export SWITCH_ENABLE= <enable password for network devices>
 python app.py
 ```
 
-### Option 2: Running Vanilla ISE as a Docker container
-#### Set a environment variables file
+### Option 2: Running Vanilla ISE as a Docker container (CLI)
+#### Create an environment variable file
 ```
 ISE_IP= <ISE hostname/IP>
 ISE_USER= <ISE username>
@@ -121,11 +121,41 @@ SWITCH_PASS= <password for network devices>
 SWITCH_ENABLE= <enable password for network devices>
 ```
 
-#### Run the Docker container
-`docker run -d --env-file <path to env file> -v <path to data dir>:/Vanilla-ISE/data obrigg/vanilla-ise`
+##### Run the Docker container as a daemon:
+`docker run -d --env-file <path to env file> -p 5000:5000 -v <path to data dir>:/Vanilla-ISE/data obrigg/vanilla-ise`
 
-running the Docker in interactive mode:
-`docker run -ti --env-file <path to env file> -v <path to data dir>:/Vanilla-ISE/data obrigg/vanilla-ise`
+##### Run the Docker container in interactive mode:
+`docker run -ti --env-file <path to env file> -p 5000:5000 -v <path to data dir>:/Vanilla-ISE/data obrigg/vanilla-ise`
+
+### Option 3: Running Vanilla ISE as a Docker container (Docker Compose)
+#### Create a `docker-compose.yaml` file (sample in repo)
+
+```
+version: '3'
+services:
+  vanilla-ise:
+    image: obrigg/vanilla-ise
+    container_name: vanilla-ise
+    environment:
+      - ISE_IP= <ISE hostname/IP>
+      - ISE_USER= <ISE username>
+      - ISE_PASSWORD= <ISE password>
+      - SYSLOG_SERVER= <Syslog server IP, for auditing>
+      - SWITCH_USER= <username for network devices>
+      - SWITCH_PASS= <password for network devices>
+      - SWITCH_ENABLE= <enable password for network devices>
+    volumes:
+      - <path to data dir>:/Vanilla-ISE/data
+    ports:
+      - 5000:5000
+```
+
+#### Run the Docker container:
+`docker-compose up -d`
+
+----
+
+You can access the Vanilla ISE GUI at `http://<host ip>:5000` using your ISE username/password to login.
 
 ----
 ### Licensing info
