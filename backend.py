@@ -1,5 +1,4 @@
 import re
-from genie.metaparser.util.exceptions import SchemaEmptyParserError
 import os
 import requests
 import json
@@ -11,6 +10,7 @@ from netaddr import *
 from aiohttp import ClientSession, ClientTimeout, BasicAuth
 from genie.testbed import load
 from requests.auth import HTTPBasicAuth
+from genie.metaparser.util.exceptions import SchemaEmptyParserError
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
@@ -286,6 +286,106 @@ def check_ise_auth_status(mac_address: str):
                     status_details['SGT'] = "None"
                 return(status_details)
 ######       End of ISE functions      ######
+
+
+def get_device_ports(device_ip: str):
+    '''
+    This function will retrieve the list of interfaces on a given NAD/Switch,
+    the list of authentication sessions on that switch, and return a dictionary
+    with the following structure:
+
+    {
+    "stack_members": 3,
+    "stacks": {
+        "member1": {
+            "GigabitEthernet1/0/1": {
+                "status": "connected",
+                "vlan": 1234,
+                "description": "one port",
+                "auth_status": "Unauth",
+                "clients": [
+                    {"0cd0.f898.1420": "Unauth"}
+                ]
+            },
+            "GigabitEthernet1/0/2": {
+                "status": "connected",
+                "vlan": 1,
+                "description": "another port",
+                "auth_status": "Auth",
+                "clients": [
+                    {"603d.26da.8612": "Unauth"}
+                ]
+            },
+                "GigabitEthernet3/0/12": {
+                "status": "connected",
+                "vlan": 1234,
+                "description": "one port",
+                "auth_status": "Mixed",
+                "clients": [
+                    {"700b.4fc5.bfad": "Unauth"},
+                    {"0cd0.f842.0481": "Auth"}
+                ]
+
+            },
+    }}}  
+    '''
+    print('Verifying IP Address validity')
+    try:
+        ip = IPAddress(device_ip)
+        print(f'The IP address is {ip.format()}')
+    except:
+        print('\033[1;31mError, invalid device IP address\033[0m')
+        return("ERROR: Invalid IP address")
+    testbed_input = testbed_template
+    testbed_input['devices']['device']['connections']['cli']['ip'] = ip.format()
+    testbed = load(testbed_input)
+    device = testbed.devices['device']
+    # Connect to the device
+    try:
+        device.connect(via='cli', learn_hostname=True)
+    except:
+        print(f"\033[1;31mERROR: Problem connecting to {device_ip}...\033[0m")
+        return([f"ERROR: Problem connecting to {device_ip}..."])
+    # Get authentication sessions
+    try:
+        auth_sessions = device.parse(f'show {parse_command}')
+    except SchemaEmptyParserError:
+        print(f"\033[1;31mERROR: No access sessions on {device_ip}.\033[0m")
+        return([f"ERROR: No access sessions on {device_ip}."])
+    except:
+        print(f"\033[1;31mERROR: Problem parsing information from {device_ip}.\033[0m")
+        return([f"ERROR: Problem parsing information from {device_ip}."])
+    # Get interfaces' vlan assignments
+    try:
+        interfaces_status = device.parse('show interfaces status')
+    except SchemaEmptyParserError:
+        print(f"\033[1;31mERROR: No access sessions on {device_ip}.\033[0m")
+        return([f"ERROR: No access sessions on {device_ip}."])
+    except:
+        print(f"\033[1;31mERROR: Problem parsing information from {device_ip}.\033[0m")
+        return([f"ERROR: Problem parsing information from {device_ip}."])
+    #
+    # Create the formatted stack units' interface mapping
+    #
+    results = {"stack_members": 0, "stacks": {}}
+    for interface in interfaces_status['interfaces']:
+        member_number = re.findall(r'\d+', interface)[0]
+        if member_number not in results['stacks'].keys():
+            results['stacks'][member_number] = {}
+        results['stacks'][member_number][interface] = interfaces_status['interfaces'][interface]
+        #
+        # Cross-reference with authentication sessions
+        #
+        if interface in auth_sessions['interfaces'].keys():
+            clients = []
+            for client in auth_sessions['interfaces'][interface]['client']:
+                clients.append({client: auth_sessions['interfaces'][interface]['client'][client]['status']})
+            results['stacks'][member_number][interface]['clients'] = clients
+        #
+        # Calculate the number of stack members
+        #
+        results['stack_members'] = len(results['stacks'].keys())
+    return(results)
 
 
 def get_device_auth_sessions(device_ip: str):
