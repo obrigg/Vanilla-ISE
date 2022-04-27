@@ -476,6 +476,107 @@ def format_mac(mac_address: str):
         return("ERROR")
 
 
+def get_port_auth_sessions(device_ip: str, interface: str):
+    '''
+    This function will retrieve the active authentication sessions on a 
+    given NAD/Switch (required: NAD's ip address), and returns a list of 
+    authentication sessions.
+
+    e.g.
+    [{
+        'Interface': 'GigabitEthernet1/0/7',
+        'EndpointMAC': '0050.5660.2da6',
+        'Status': 'Auth',
+        'Method': 'mab',
+        'Username': '00-50-56-60-2D-A6',
+        'IPv4': 'Unknown',
+        'NICVendor': 'VMware, Inc.',
+        'Vlan': '1',
+        'IPv4ACL': 'xACSACLx-IP-DENY_ALL_IPV4_TRAFFIC-57f6b0d3',
+        'IPv6ACL': 'xACSACLx-IPV6-DENY_ALL_IPV6_TRAFFIC-5f4ab0a2'
+    },
+    {
+        'Interface': 'GigabitEthernet1/0/7',
+        'EndpointMAC': '0050.5660.39c6',
+        'Status': 'Auth',
+        'Method': 'mab',
+        'Username': '00-50-56-60-39-C6',
+        'IPv4': '172.31.255.183',
+        'NICVendor': 'VMware, Inc.',
+        'Vlan': '1',
+        'IPv4ACL': 'xACSACLx-IP-DENY_ALL_IPV4_TRAFFIC-57f6b0d3',
+        'IPv6ACL': 'xACSACLx-IPV6-DENY_ALL_IPV6_TRAFFIC-5f4ab0a2'
+    }]
+    '''
+    print('Verifying IP Address validity')
+    try:
+        ip = IPAddress(device_ip)
+        print(f'The IP address is {ip.format()}')
+    except:
+        print('\033[1;31mError, invalid device IP address\033[0m')
+        return("ERROR: Invalid IP address")
+    testbed_input = testbed_template
+    testbed_input['devices']['device']['connections']['cli']['ip'] = ip.format()
+    testbed = load(testbed_input)
+    device = testbed.devices['device']
+    # Connect to the device
+    try:
+        device.connect(via='cli', learn_hostname=True)
+    except:
+        print(f"\033[1;31mERROR: Problem connecting to {device_ip}...\033[0m")
+        return([f"ERROR: Problem connecting to {device_ip}..."])
+    # Get authentication sessions
+    try:
+        auth_sessions = device.parse(f'show {parse_command}')
+    except SchemaEmptyParserError:
+        print(f"\033[1;31mERROR: No access sessions on {device_ip}.\033[0m")
+        return([f"ERROR: No access sessions on {device_ip}."])
+    except:
+        print(f"\033[1;31mERROR: Problem parsing information from {device_ip}.\033[0m")
+        return([f"ERROR: Problem parsing information from {device_ip}."])
+    # Get interfaces' vlan assignments
+    try:
+        interfaces_status = device.parse('show interfaces status')
+    except SchemaEmptyParserError:
+        print(f"\033[1;31mERROR: No access sessions on {device_ip}.\033[0m")
+        return([f"ERROR: No access sessions on {device_ip}."])
+    except:
+        print(f"\033[1;31mERROR: Problem parsing information from {device_ip}.\033[0m")
+        return([f"ERROR: Problem parsing information from {device_ip}."])
+    relevant_sessions = []
+    if interface not in auth_sessions['interfaces'].keys():
+        print(f"\033[1;31mERROR: Interface {interface} has no authentication sessions.\033[0m")
+        return([f"ERROR: Interface {interface} has no authentication sessions."])
+    else:
+        auth_details = device.parse(f"show {parse_command} interface {interface} details")
+        for client in auth_sessions['interfaces'][interface]['client']:
+            session = {'Interface': interface,
+                           'EndpointMAC': client,
+                           'Status': auth_sessions['interfaces'][interface]['client'][client]['status'],
+                           'Method': auth_sessions['interfaces'][interface]['client'][client]['method'],
+                           'Username': auth_details['interfaces'][interface]['mac_address'][client]['user_name'],
+                           'IPv4': auth_details['interfaces'][interface]['mac_address'][client]['ipv4_address'],
+                           'NICVendor': EUI(client).oui.registration()['org'],
+                           'Vlan': interfaces_status['interfaces'][interface]['vlan']
+                           }
+            try:
+                if "local_policies" in auth_details['interfaces'][interface]['mac_address'][client]:
+                    session['Vlan'] = auth_details['interfaces'][interface]['mac_address'][client]['local_policies']['vlan_group']['vlan']
+                if "server_policies" in auth_details['interfaces'][interface]['mac_address'][client]:
+                    server_policies = auth_details['interfaces'][interface]['mac_address'][client]['server_policies']
+                    for policy in server_policies:
+                        if server_policies[policy]['name'] == 'SGT Value':
+                            session['SGT'] = server_policies[policy]['policies']
+                        elif server_policies[policy]['name'] == 'ACS ACL IPV6':
+                            session['IPv6ACL'] = server_policies[policy]['policies']
+                        elif server_policies[policy]['name'] == 'ACS ACL':
+                            session['IPv4ACL'] = server_policies[policy]['policies']
+            except:
+                pass
+            relevant_sessions.append(session)
+    return(relevant_sessions)
+
+
 def read_voucher_list():
     '''
     Voucher file format:
