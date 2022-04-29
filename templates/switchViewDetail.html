@@ -1,0 +1,93 @@
+<!-- This page shows the associated session information for a specific device and interface. -->
+
+{% extends "masterPage.html" %}
+
+{% block content %}
+<div class="row">
+
+    <!-- Left Rail -->
+    {% include "menu.html" %}
+
+    <!-- Middle + Right Rail -->
+    <div class="col-9 col-xl-10 col-md-9">
+        <div class="section">
+
+            <!--Back Button-->
+            <a class="listitem" href="switchView?ip_address={{ip_address}}">
+                <span id="back" class="icon-arrow icon-size-22"></span><span>Back to Switch View</span>
+            </a>
+            
+            <!--Headline-->
+            <div class="headline">
+                <h2>Sessions for {{ interface }} of {{ ip_address }}</h2>
+            </div>
+
+            <!--Alert for error message-->
+            {% include "alert.html" %}
+            
+                {% if relevant_sessions%}
+
+                <div class="responsive-table">
+                    <table class="table table--lined table--selectable table">
+                        <thead>
+                            <tr>
+                                <th class="w-10">Endpoint MAC</th>
+                                <th class="w-5">Status</th>
+                                <th class="w-10">Method</th>
+                                <th class="w-10">Username</th>
+                                <th class="w-10">IPv4 Address</th>
+                                <th class="w-5">Vlan</th>
+                                <th class="w-5">SGT</th>
+                                <th class="w-10">IPv4 ACL</th>
+                                <th class="w-10">NIC Vendor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            {% for session in relevant_sessions %}
+                                <tr>
+
+                                    <td>
+                                        <span>{{session.EndpointMAC}}</span>
+                                    </td>
+                                    <td>
+                                        <span>{{session.Status}}</span>
+                                    </td>
+                                    <td>
+                                        <span>{{session.Method}}</span>
+                                    </td>
+                                    <td>
+                                        <span>{{session.Username}}</span>
+                                    </td>
+                                    <td>
+                                        <span>{{session.IPv4}}</span>
+                                    </td>
+                                    <td>
+                                        <span>{{session.Vlan}}</span>
+                                    </td>
+                                    <td>
+                                        <span>{{session.SGT}}</span>
+                                    </td>
+                                    <td>
+                                        <span>{{session.IPv4ACL}}</span>
+                                    </td>
+                                    <td>
+                                        <span>{{session.NICVendor}}</span>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+
+                        </tbody>
+                    </table>
+                </div>
+
+                {% else %}
+
+                    <div class="no_query">No session information available for this interface.</div>
+                
+                {% endif %}
+            </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -117,3 +117,70 @@ ul.list-group{
 .btn{
     white-space:nowrap !important;
 }
+
+
+/*Switch Graph*/
+.stack{
+    margin: 20px 0;
+}
+
+.switch_name{
+    font-weight:bold;
+}
+
+.port-container{
+    background-color: var(--cui-color-white);
+    border: 1px solid var(--cui-color-gray-300);
+    padding: 20px;
+    margin: 10px 20px 20px 0px;
+    display: flex; justify-content: flex-start;
+    width: min-content;
+}
+
+.port_pair{ 
+    align-self: start;
+}
+.port{
+    display: flex !important;
+    flex-direction: column; 
+    flex-wrap: wrap;
+    height: auto !important;
+    border: none !important;
+    width: 56px;
+}
+
+.port_image{
+    align-self: center;
+    z-index: 10;
+}
+
+.port_name{
+    align-self: center; 
+    padding: 4px;
+    font-size: smaller;
+}
+
+.port_link{
+    text-decoration: none !important;
+    color: var(--cui-color-gray-600) !important;
+
+}
+
+.rotated_180{
+    -webkit-transform:rotate(180deg);
+    -moz-transform: rotate(180deg);
+    -ms-transform: rotate(180deg);
+    -o-transform: rotate(180deg);
+    transform: rotate(180deg);
+}
+
+/*Box.js tooltip*/
+
+.jBox-Mouse .jBox-container, .jBox-Tooltip .jBox-container{
+    box-shadow: 1px 1px 2px rgb(200 200 200 / 15%) !important;
+    border-radius: 2px;
+}
+
+.jBox-pointer:after, .jBox-pointer:before{
+    box-shadow: 1px 1px 2px rgb(200 200 200 / 15%) !important;
+}

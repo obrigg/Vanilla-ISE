@@ -1,0 +1,85 @@
+<!-- This page shows a graphical representation of a switch and its port statuses. -->
+
+{% extends "masterPage.html" %}
+
+{% block content %}
+<div class="row" style="height: calc(100vh - 100px);">
+
+    <!-- Left Rail -->
+    {% include "menu.html" %}
+
+    <!-- Middle + Right Rail -->
+    <div class="col-9 col-xl-10 col-md-9" style="overflow-x: auto;">
+        <div class="section">
+
+            <div class="headline" class="flex-center-vertical">
+                <h2>Switch View</h2>
+            </div>
+
+            <!--Alert for error message-->
+            {% include "alert.html" %}
+
+            <form action="/switchView" method="POST">
+
+                <div class="form-group form-group--inline">
+                    <div class="form-group__text">
+                        <input type="text" placeholder="IP address" value="{{ip_address}}" name="ip_address" required
+                            minlength="7" maxlength="15" size="15"
+                            pattern="^((\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$">
+                    </div>
+                    <button class="btn btn--primary" type="submit" onclick="showLoadingText(this)"
+                        onload="showOriginalText(this, 'Query Device')">View Switch Status</button>
+                </div>
+
+                {% if detailed_switch_status %}
+                
+                    <!--Stack-->
+                    <div class="stack">
+
+                        <!--Switch-->
+                        {% for switch_key, switch_value in detailed_switch_status.stacks.items() %}
+                            <div class="switch_name">Switch {{switch_key}}</div>
+                            <div class="port-container">
+                            {% set count = namespace(value=0) %}
+
+                            <!--Port pair-->
+                            {% for interface_key,interface_details in switch_value.items() %}
+
+                                <!--If port has even number, position it on top column-->
+                                {% if count.value == 0 %}
+                                    <div class="port_pair">
+                                    {% include "port.html" %}
+                                    {% set count.value = count.value + 1 %}
+
+                                <!--If port has uneven number, position it on bottom column-->
+                                {% else %}
+                                    {% include "port.html" %}
+                                    {% set count.value = 0 %}
+                                    </div>
+
+                                {% endif %}
+                            {% endfor %}
+
+                            <!--If uneven number of ports: close port pair div here-->
+                            {% if count.value != 0 %}
+                            </div>
+                            {% endif %}
+
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                {% else %}
+                <div class="no_query">
+
+                    Please enter an IP address and press the button to access the switch view.
+               
+                 </div>
+                {% endif %}
+
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

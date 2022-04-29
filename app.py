@@ -152,6 +152,75 @@ def deviceQuery():
         return redirect(url_for('login'))
 
 
+app.route('/switchView?ip_address=<ip_address>')
+@app.route('/switchView', methods=['GET', 'POST'])
+def switchView():
+    '''
+    This function shows an graphical representation of a switch and its port status. 
+    '''
+    if type(session.get('logged_in')) == int and session.get('logged_in') > int(time()):
+        session['logged_in'] = int(time()) + backend.timeout
+        print(f"Login for {session['username']} extended until: {ctime(session['logged_in'])}")
+        try:    
+            if request.method == 'GET':
+                ip_address = request.args.get("ip_address")
+
+            elif request.method == 'POST':
+                ip_address = request.form.get("ip_address")
+
+            if ip_address == None:
+                ip_address = ''
+                detailed_switch_status={}  
+            else:
+                detailed_switch_status = backend.get_device_ports(ip_address)
+                propagate_backend_exception(detailed_switch_status)
+                
+            return render_template('switchView.html', ip_address=ip_address, detailed_switch_status=detailed_switch_status)
+
+        except Exception as e:
+            print(e)
+            return render_template('switchView.html', error=True, errorcode=e)
+    else:
+        print("First you need to login")
+        return redirect(url_for('login'))
+
+
+app.route('/switchViewDetail?ip_address=<ip_address>&interface=<interface>')
+@app.route('/switchViewDetail', methods=['GET', 'POST'])
+def switchViewDetail():
+    '''
+    This function shows the associated session information for a specific interface and device.
+    '''
+    if type(session.get('logged_in')) == int and session.get('logged_in') > int(time()):
+        session['logged_in'] = int(time()) + backend.timeout
+        print(f"Login for {session['username']} extended until: {ctime(session['logged_in'])}")
+        
+        ip_address = ''
+        interface = ''
+        
+        try:
+            if request.method == 'GET':
+
+                ip_address = request.args.get("ip_address")
+                interface = request.args.get("interface")
+
+                relevant_sessions = backend.get_port_auth_sessions(ip_address, interface)
+                propagate_backend_exception(relevant_sessions)
+
+                return render_template('switchViewDetail.html', ip_address=ip_address, interface=interface, relevant_sessions=relevant_sessions)
+
+        except Exception as e:
+            print(e)
+            if "has no authentication sessions" in repr(e):
+                return render_template('switchViewDetail.html', error=False, ip_address=ip_address, interface=interface, relevant_sessions={})
+
+            return render_template('switchViewDetail.html', error=True, errorcode=e)
+
+    else:
+        print("First you need to login")
+        return redirect(url_for('login'))
+
+
 @app.route('/voucher', methods=['GET', 'POST'])
 def voucher():
     '''

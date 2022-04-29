@@ -373,6 +373,8 @@ def get_device_ports(device_ip: str):
         if member_number not in results['stacks'].keys():
             results['stacks'][member_number] = {}
         results['stacks'][member_number][interface] = interfaces_status['interfaces'][interface]
+        interface_abbr = interface[:2] + re.findall(r'\d+(?:/\d+)+', interface)[0]
+        results['stacks'][member_number][interface]['interface_abbr']= interface_abbr
         #
         # Cross-reference with authentication sessions
         #
@@ -550,6 +552,8 @@ def get_port_auth_sessions(device_ip: str, interface: str):
     else:
         auth_details = device.parse(f"show {parse_command} interface {interface} details")
         for client in auth_sessions['interfaces'][interface]['client']:
+            if 'user_name' not in auth_details['interfaces'][interface]['mac_address'][client]:
+                auth_details['interfaces'][interface]['mac_address'][client]['user_name'] = ''
             session = {'Interface': interface,
                            'EndpointMAC': client,
                            'Status': auth_sessions['interfaces'][interface]['client'][client]['status'],

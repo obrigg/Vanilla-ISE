@@ -1,0 +1,112 @@
+<!--This file includes the definition of a port within the switch view. -->
+
+<!--For the tooltips box.js is used (see line 28, 29-100, 105). Box.js is licensed under the following Licence:
+MIT License
+
+Copyright (c) 2021 Stephan Wagner
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+-->
+
+<a class="port_link" href="/switchViewDetail?ip_address={{ip_address}}&interface={{interface_key}}">
+    <div class="port tooltip" data-jbox-title="" data-jbox-content="">
+        
+        {% set unauth_clients = namespace(value=False) %}
+        
+        <!--Port tooltip content. Used to dynamically populate the data-jbox-content attribute-->
+        <span class="tooltip_content" hidden>
+            <b>{{interface_key}}</b> <br/>
+            {% for status_key,status_value in interface_details.items() %}
+                {% if status_key == "clients" %}
+                <div class="clients_list">
+                    <b>Clients:</b>
+                    {% for client in status_value %}
+                        {% for client_key,client_value in client.items() %}
+                            <div class="client">
+                                {% if client_value == "Unauth" %}
+                                    {% set unauth_clients.value = True %}
+                                    <img src="{{ url_for('static', filename='images/red_dot.png')}}" style="width: 15px;"/>
+                                {% elif client_value == "Auth" %}
+                                    <img src="{{ url_for('static', filename='images/green_dot.png')}}" style="width: 15px;"/>
+                                {% endif %} 
+                                <b>{{client_value|title}}:</b> {{ client_key}}  
+                            </div>
+                        {% endfor %}
+                    {% endfor %}
+                </div>
+                {% elif status_key == "interface_abbr" %}
+                    <!--do not show-->
+                {% elif status_key == "status" %}
+                    <div class="non_client_list">
+                        {% if status_value == "notconnect" %}
+                            <img src="{{ url_for('static', filename='images/grey_dot.png')}}" style="width: 15px;"/>
+                        {% elif status_value == "connected" %}
+                            <img src="{{ url_for('static', filename='images/green_dot.png')}}" style="width: 15px;"/>
+                        {% endif %} 
+                        <b>{{ status_key|title }}:</b> {{status_value}}
+                    </div>
+                {% else %}
+                    <div class="non_client_list">
+                        <b>{{ status_key|title }}:</b> {{status_value}}
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </span>
+
+        <!--Port name for first row ports-->
+        {% if count.value == 0%}<div class="port_name">{{ interface_details.interface_abbr }}</div>{% endif %}
+
+        <!--Port image-->
+        {% if interface_details.status == "connected" and unauth_clients.value == False %}
+        <img class="port_image {% if count.value != 0%}rotated_180{% endif %}"
+            src="{{ url_for('static', filename='images/green_port.png')}}" />
+        {% elif unauth_clients.value == True %}
+        <img class="port_image {% if count.value != 0%}rotated_180{% endif %}"
+            src="{{ url_for('static', filename='images/red_port.png')}}" />
+        {% else %}
+        <img class="port_image {% if count.value != 0%}rotated_180{% endif %}"
+            src="{{ url_for('static', filename='images/grey_port.png')}}" />
+        {% endif %}
+
+        <!--Port name for second row ports-->
+        {% if count.value != 0%}<div class="port_name">{{ interface_details.interface_abbr }}</div>{% endif %}
+
+    </div>
+</a>
+
+<script>
+    $(document).ready(function () {
+
+        /*Create a new instance of jBox Tooltip and attach it to element*/
+        new jBox('Tooltip', {
+            attach: '.tooltip',
+            trigger: 'mouseenter',
+            getTitle: 'data-jbox-title',
+            getContent: 'data-jbox-content',
+        });
+
+        /*Populate the Tooltip data-jbox-content attribute based on the hidden tooltips_content element*/
+        $("div.port").each(function (index) {
+            var tooltip_content = $(this).find('.tooltip_content').html();
+            $(this).attr('data-jbox-content', tooltip_content);
+        });
+
+    });
+</script>
+

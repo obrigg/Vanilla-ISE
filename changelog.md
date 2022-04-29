@@ -1,4 +1,8 @@
 # Change log
+##### 29-April-2022
+* Added a page with a graphical representation of a switch and its port statuses.
+* For each port, a detail page with the session information for the specific port was added.
+
 ##### 12-May-2021
 * Added a welcome page, to avoid loading delay for networks with many NADs.
 * Added jquery as a local file.
