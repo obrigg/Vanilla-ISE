@@ -351,16 +351,13 @@ def get_device_ports(device_ip: str):
         auth_sessions = device.parse(f'show {parse_command}')
     except SchemaEmptyParserError:
         print(f"\033[1;31mERROR: No access sessions on {device_ip}.\033[0m")
-        return([f"ERROR: No access sessions on {device_ip}."])
+        auth_sessions = {"interfaces": {}}
     except:
         print(f"\033[1;31mERROR: Problem parsing information from {device_ip}.\033[0m")
         return([f"ERROR: Problem parsing information from {device_ip}."])
     # Get interfaces' vlan assignments
     try:
         interfaces_status = device.parse('show interfaces status')
-    except SchemaEmptyParserError:
-        print(f"\033[1;31mERROR: No access sessions on {device_ip}.\033[0m")
-        return([f"ERROR: No access sessions on {device_ip}."])
     except:
         print(f"\033[1;31mERROR: Problem parsing information from {device_ip}.\033[0m")
         return([f"ERROR: Problem parsing information from {device_ip}."])
