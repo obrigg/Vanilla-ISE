@@ -107,13 +107,11 @@ def deviceList():
             elif request.method == 'POST':
 
                 ip_address = request.form.get("ip_address")
-                relevant_sessions = backend.get_device_auth_sessions(ip_address)
-                propagate_backend_exception(relevant_sessions)
+                detailed_switch_status = backend.get_device_ports(ip_address)
+                propagate_backend_exception(detailed_switch_status)
+                
+                return render_template('switchView.html', ip_address=ip_address, detailed_switch_status=detailed_switch_status)
 
-                print(relevant_sessions)
-                print(ip_address)
-
-                return render_template('deviceQuery.html', post_request_done=True, ip_address=ip_address, relevant_sessions=relevant_sessions)
 
         except Exception as e:
             print(e)
