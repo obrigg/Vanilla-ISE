@@ -366,6 +366,8 @@ def get_device_ports(device_ip: str):
     #
     results = {"stack_members": 0, "stacks": {}}
     for interface in interfaces_status['interfaces']:
+        if "/" not in interface:
+            continue
         member_number = re.findall(r'\d+', interface)[0]
         if member_number not in results['stacks'].keys():
             results['stacks'][member_number] = {}
