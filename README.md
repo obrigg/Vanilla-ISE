@@ -34,11 +34,14 @@ Using Cisco ISE's open APIs, primarily ERS (External RESTful Services), we have 
 
 * Query a network device for current authentication sessions.
 <img src="img/device query.png">
+
 * Query a specific endpoint for details (status, NAD's IP and interface, authentication mechanism, username, and failure reason - if failed)
 <img src="img/endpoint query.png">
+
 * Grant and revoke network access "vouchers".
 <img src="img/voucher list.png">
 <img src="img/add voucher.png">
+
 * **Vanilla ISE now requires authentication**. Use the your ISE credentials to authenticate to Vanilla ISE.
 
 * Auditing: Vanilla ISE will keep track of the users creating and revoking vouchers, as well as send audit messages to a syslog server configured in the environment variables.
