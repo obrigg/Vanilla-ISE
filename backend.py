@@ -601,9 +601,8 @@ def read_voucher_list():
             json.dump(voucher_list, f)
     print(f"Voucher list content (Current Epoch time: {int(time())}):\
         \n=======================")
-    #for voucher in voucher_list:
-    #    print(voucher)
-    pp(voucher_list)
+    for voucher in voucher_list:
+        print(voucher)
     print("=======================")
     return(voucher_list)
 
