@@ -40,7 +40,9 @@ Using Cisco ISE's open APIs, primarily ERS (External RESTful Services), we have 
 <img src="img/voucher list.png">
 <img src="img/add voucher.png">
 * **Vanilla ISE now requires authentication**. Use the your ISE credentials to authenticate to Vanilla ISE.
+
 * Auditing: Vanilla ISE will keep track of the users creating and revoking vouchers, as well as send audit messages to a syslog server configured in the environment variables.
+
 ##### Communication with the devices, and data parsing is powered by <img src="/img/pyats.png">
 More information about pyATS is available at: https://developer.cisco.com/pyats/
 ## Running vanilla ISE:
