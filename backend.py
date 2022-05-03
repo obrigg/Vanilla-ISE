@@ -618,8 +618,8 @@ def read_voucher_list():
     '''
     Voucher file format:
     [
-        {"mac": "00:11:22:33:44:55", "duration": 1617292081, "group": "AAA-Vouchers", "user": "Oren"},
-        {"mac": "11:22:33:44:55:66", "duration": 1617293054, "group": "BBB-Vouchers", "user": "Ramona"}
+        {"type": "host", "mac": "00:11:22:33:44:55", "duration": 1617292081, "group": "AAA-Vouchers", "user": "Oren"},
+        {"type": "host", "mac": "11:22:33:44:55:66", "duration": 1617293054, "group": "BBB-Vouchers", "user": "Ramona"}
     ]
     '''
     try:
@@ -639,7 +639,7 @@ def read_voucher_list():
     return(voucher_list)
 
 
-def add_voucher(mac_address: str, duration: int, voucher_group: str, user: str):
+def add_host_voucher(mac_address: str, duration: int, voucher_group: str, user: str):
     '''
     This function will receive an endpoint MAC address, add it to ISE's
     voucher endpoint group, and add an entry to the voucher list file 
@@ -650,18 +650,20 @@ def add_voucher(mac_address: str, duration: int, voucher_group: str, user: str):
         try:
             # Update the voucher file
             voucher_list = read_voucher_list()
-            if any(mac in voucher['mac'] for voucher in voucher_list):
-                pp(f"[red]ERROR: MAC {mac} already has a voucher. Kindly revoke it first.")
-                return(f"ERROR: MAC {mac} already has a voucher. Kindly revoke it first.")
-            else:
-                print(
-                    f"Adding MAC {mac} with a duration of {duration} hours to the voucher group {voucher_group}, user: {user}")
-                voucher = {"mac": mac, "duration": int(
-                    time()) + duration*60*60, "group": voucher_group, 
-                    "user": user}
-                voucher_list.append(voucher)
-                with open('./data/voucher.json', 'w') as f:
-                    json.dump(voucher_list, f)
+            # Checking if the voucher already exists
+            for voucher in voucher_list:
+                if voucher['type'] == "host" and voucher['mac'] == mac:
+                    pp(f"[red]ERROR: MAC {mac} already has a voucher. Kindly revoke it first.")
+                    return(f"ERROR: MAC {mac} already has a voucher. Kindly revoke it first.")
+            # Voucher not found - create a new one
+            print(
+                f"Adding MAC {mac} with a duration of {duration} hours to the voucher group {voucher_group}, user: {user}")
+            voucher = {"type": "host", "mac": mac, 
+                "duration": int(time()) + duration*60*60, "group": voucher_group, 
+                "user": user}
+            voucher_list.append(voucher)
+            with open('./data/voucher.json', 'w') as f:
+                json.dump(voucher_list, f)
         except:
             pp(f"[red]ERROR: Wasn't able to update the voucher file")
             return("ERROR: Wasn't able to update the voucher file")
@@ -675,10 +677,78 @@ def add_voucher(mac_address: str, duration: int, voucher_group: str, user: str):
             return(f"ERROR: Wasn't able to add {mac} to ISE's voucher list")
     else:
         pp(f"[red]ERROR: Invalid MAC address: {mac_address}")
-        return("ERROR: Invalid MAC address")
+        return(f"ERROR: Invalid MAC address: {mac_address}")
 
 
-def revoke_voucher(mac_address: str, user="system"):
+def add_port_voucher(device_ip: str, interface: str, duration: int, user: str):
+    '''
+    This function will receive a switch's IP address and interface name, 
+    removes its dot1x command from the switch (storing it in the voucher 
+    for restoration later).
+    '''
+    print('Verifying IP Address validity')
+    try:
+        ip = IPAddress(device_ip)
+        print(f'The IP address is {ip.format()}')
+    except:
+        pp('[red]Error, invalid device IP address')
+        return("ERROR: Invalid IP address")
+    testbed_input = testbed_template
+    testbed_input['devices']['device']['connections']['cli']['ip'] = ip.format()
+    testbed = load(testbed_input)
+    device = testbed.devices['device']
+    # Connect to the device
+    try:
+        device.connect(via='cli', learn_hostname=True)
+    except:
+        pp(f"[red]ERROR: Problem connecting to {device_ip}...")
+        return([f"ERROR: Problem connecting to {device_ip}..."])
+    # Get authentication sessions
+    try:
+        interface_config = device.parse(f'show run interface {interface}')
+    except:
+        pp(f"[red]ERROR: Problem parsing information from {device_ip}.")
+        return([f"ERROR: Problem parsing information from {device_ip}."])
+    # Check for dot1x commands
+    if "source_template" in interface_config['interfaces'][interface]:
+        command = f"source template {interface_config['interfaces'][interface]['source_template']}"
+    elif "sdgf" in interface_config['interfaces'][interface]:
+        command = f"source-interface {interface_config['interfaces'][interface]['sdgf']}"
+    else:
+        pp(f"[red]ERROR: No dot1x command found on {device_ip}.")
+        return(f"ERROR: No dot1x command found on {device_ip}.")
+    # Remove the dot1x command from the interface config
+    try:
+        device.configure(f"interface {interface} \n no {command}")
+    except:
+        pp(f"[red]ERROR: Problem removing the command {command} from {interface} on {device_ip}.")
+        return([f"ERROR: Problem removing dot1x configuration from {device_ip}."])
+    # Update the voucher file
+    try:
+        voucher_list = read_voucher_list()
+        # Checking if the voucher already exists
+        for voucher in voucher_list:
+            if voucher['type'] == "port":
+                if voucher['switch_ip'] == device_ip and voucher['interface'] == interface:
+                    pp(f"[red]ERROR: {device_ip} already has a voucher. Kindly revoke it first.")
+                    return(f"ERROR: {device_ip} already has a voucher. Kindly revoke it first.")
+        # Voucher not found - create a new one
+        print(f"Adding {interface} on switch {device_ip} with a duration of {duration} hours, user: {user}")
+        voucher = {"type": "port", "switch_ip": device_ip, 
+            "duration": int(time()) + duration*60*60,
+            "interface": interface,
+            "command": command,
+            "user": user}
+        voucher_list.append(voucher)
+        with open('./data/voucher.json', 'w') as f:
+            json.dump(voucher_list, f)
+    except:
+        pp(f"[red]ERROR: Wasn't able to update the voucher file - reverting port configuration")
+        device.configure(f"interface {interface} \n {command}")
+        return("ERROR: Wasn't able to update the voucher file - reverting port configuration")
+
+
+def revoke_host_voucher(mac_address: str, user: str):
     '''
     This function will receive an endpoint MAC address, remove it from 
     ISE's voucher endpoint group, and from the voucher list file.
@@ -687,16 +757,19 @@ def revoke_voucher(mac_address: str, user="system"):
     try:
         # Update voucher file
         voucher_list = read_voucher_list()
-        if any(mac in voucher['mac'] for voucher in voucher_list):
-            for voucher in voucher_list:
-                if voucher['mac'] == mac:
-                    voucher_group = voucher['group']
-                    print(
-                        f"Deleting MAC {mac} (group {voucher_group}) from the voucher list")
-                    voucher_list.remove(voucher)
-                    with open('./data/voucher.json', 'w') as f:
-                        json.dump(voucher_list, f)
-        else:
+        isFound = False
+        # Checking if the voucher already exists
+        for voucher in voucher_list:
+            if voucher['type'] == "host" and voucher['mac'] == mac:
+                isFound = True
+                voucher_group = voucher['group']
+                print(
+                    f"Deleting MAC {mac} (group {voucher_group}) from the voucher list")
+                voucher_list.remove(voucher)
+                with open('./data/voucher.json', 'w') as f:
+                    json.dump(voucher_list, f)
+                break
+        if not isFound:
             pp(f"[red]ERROR: MAC address {mac} not found on the voucher list")
     except:
         pp(f"[red]ERROR: Wasn't able to update the voucher file")
@@ -712,6 +785,57 @@ def revoke_voucher(mac_address: str, user="system"):
         return(f"ERROR: Wasn't able to remove {mac} from ISE's voucher list")
 
 
+def revoke_port_voucher(device_ip: str, interface: str, command: str, user: str):
+    '''
+    This function will receive an endpoint MAC address, remove it from 
+    ISE's voucher endpoint group, and from the voucher list file.
+    '''
+    print('Verifying IP Address validity')
+    try:
+        ip = IPAddress(device_ip)
+        print(f'The IP address is {ip.format()}')
+    except:
+        pp('[red]Error, invalid device IP address')
+        return("ERROR: Invalid IP address")
+    testbed_input = testbed_template
+    testbed_input['devices']['device']['connections']['cli']['ip'] = ip.format()
+    testbed = load(testbed_input)
+    device = testbed.devices['device']
+    # Connect to the device
+    try:
+        device.connect(via='cli', learn_hostname=True)
+    except:
+        pp(f"[red]ERROR: Problem connecting to {device_ip}...")
+        return([f"ERROR: Problem connecting to {device_ip}..."])
+    # Restore the dot1x interface configuration
+    try:
+        device.configure(f"interface {interface} \n {command}")
+    except:
+        pp(f"[red]ERROR: Problem restoring the command {command} from {interface} on {device_ip}.")
+        return([f"ERROR: Problem restoring dot1x configuration from {device_ip}."])
+    try:
+        # Update voucher file
+        voucher_list = read_voucher_list()
+        isFound = False
+        # Checking if the voucher already exists
+        for voucher in voucher_list:
+            if voucher['type'] == "port":
+                if voucher['switch_ip'] == device_ip and voucher['interface'] == interface:
+                    print(f"Deleting {interface} on switch {device_ip}, user: {user}")
+                    voucher_list.remove(voucher)
+                    isFound = True
+                    with open('./data/voucher.json', 'w') as f:
+                        json.dump(voucher_list, f)
+                    break
+        if not isFound:
+            pp(f"[red]ERROR: Port voucher not found on the voucher list")
+    except:
+        pp(f"[red]ERROR: Wasn't able to update the voucher file")
+        return("ERROR: Wasn't able to update the voucher file")
+    send_syslog(f"Voucher revoked! Switch: {device_ip}, interface: {interface}, user: {user}")
+    return("Done")
+
+
 def voucher_cleanup():
     '''
     This function will go through the voucher list and remove endpoints
@@ -721,9 +845,14 @@ def voucher_cleanup():
     voucher_list = read_voucher_list()
     for voucher in voucher_list:
         if voucher['duration'] < int(time()):
-            print(
-                f"\033[0;35mRemoving expired voucher of {voucher['mac']} from voucher group {voucher['group']}.")
-            revoke_voucher(voucher['mac'], "Timer")
+            if voucher['type'] == "host":
+                print(
+                    f"\033[0;35mRemoving expired voucher of {voucher['mac']} from voucher group {voucher['group']}.")
+                revoke_host_voucher(voucher['mac'], "Timer")
+            if voucher['type'] == "port":
+                print(
+                    f"\033[0;35mRemoving expired voucher of interface {voucher['interface']} on {voucher['switch_ip']}.")
+                revoke_port_voucher(voucher['switch_ip'], voucher['interface'], voucher['command'], "Timer")
             print("Clean-up done.\033[0m")
 
 

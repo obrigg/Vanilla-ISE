@@ -35,15 +35,23 @@ def convert_voucher_list(voucher_list):
     converted_voucher_list = []
 
     for voucher in voucher_list:
+        
+        if voucher['type'] == "host":
+            dot_free_mac = voucher['mac'].replace('.', '')
+            mac_address = ':'.join(dot_free_mac[i:i+2] for i in range(0, 12, 2))
+            exp_date = ctime(voucher['duration'])
+            voucher_group = voucher['group']
+            user = voucher['user']
+            converted_voucher_list.append(
+                {"MACAddress": mac_address, "ExpDate": exp_date, "group": voucher_group, "user": user})
 
-        dot_free_mac = voucher['mac'].replace('.', '')
-        mac_address = ':'.join(dot_free_mac[i:i+2] for i in range(0, 12, 2))
-        exp_date = ctime(voucher['duration'])
-        voucher_group = voucher['group']
-        user = voucher['user']
-        converted_voucher_list.append(
-            {"MACAddress": mac_address, "ExpDate": exp_date, "group": voucher_group, "user": user})
-
+        elif voucher['type'] == "port":
+            mac_address = voucher['switch_ip']
+            voucher_group = voucher['interface']
+            exp_date = ctime(voucher['duration'])
+            user = voucher['user']
+            converted_voucher_list.append(
+                {"MACAddress": mac_address, "ExpDate": exp_date, "group": voucher_group, "user": user})
     return converted_voucher_list
 
 
@@ -257,7 +265,7 @@ def voucher():
 
                 if(submit_type == "Add"):
 
-                    add_response = backend.add_voucher(
+                    add_response = backend.add_host_voucher(
                         form_mac_address, int(voucher_duration), 
                         voucher_group, session['username'])
                     propagate_backend_exception(add_response)
@@ -269,7 +277,7 @@ def voucher():
 
                 else:  # Revoke
 
-                    revoke_response = backend.revoke_voucher(row_mac_address, session['username'])
+                    revoke_response = backend.revoke_host_voucher(row_mac_address, session['username'])
                     propagate_backend_exception(revoke_response)
                     voucher_list = convert_voucher_list(
                         backend.read_voucher_list())
@@ -351,4 +359,4 @@ if __name__ == "__main__":
     t1 = Thread(target=voucher_cleanup_loop)
     t1.start()
     sleep(1)
-    app.run(host='0.0.0.0', debug=False, threaded=True)
+    app.run(host='0.0.0.0', debug=False, threaded=True, port=5050)
