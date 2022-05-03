@@ -24,8 +24,6 @@ app = Flask(__name__)
 app.secret_key = "CiscoISEShared"
 
 # Methods
-
-
 def convert_voucher_list(voucher_list):
     '''
     This function will receive a voucher list with MAC addresses (in "the cisco way" format)
@@ -64,6 +62,19 @@ def voucher_cleanup_loop():
         backend.voucher_cleanup()
         sleep(10*60)
 
+
+def normalize_mac_format(mac_address):
+    '''
+    This function normalizes mac addresses of different formats 
+    e.g. xxxxxxxxxxxx, xx-xx-xx-xx-xx-xx, xx.xx.xx.xx.xx.xx or xxxx.xxxx.xxxx
+    to xx:xx:xx:xx:xx:xx
+    '''
+    #Remove all :, - and . 
+    mac_address = mac_address.replace('.','').replace(':','').replace('-','')
+    #Add : after every second char
+    normalized_mac_address = ':'.join(a+b for a,b in zip(mac_address[::2], mac_address[1::2]))
+
+    return normalized_mac_address
 
 # Routes
 @app.route('/', methods=['GET'])
@@ -122,6 +133,7 @@ def deviceList():
         print("First you need to login")
         return redirect(url_for('login'))
 
+app.route('/deviceQuery?ip_address=<ip_address>')
 @app.route('/deviceQuery', methods=['GET', 'POST'])
 def deviceQuery():
     '''
@@ -133,16 +145,19 @@ def deviceQuery():
         print(f"Login for {session['username']} extended until: {ctime(session['logged_in'])}")
         try:
             if request.method == 'GET':
-
-                return render_template('deviceQuery.html', post_request_done=False, ip_address='', relevant_sessions={})
+                ip_address = request.args.get("ip_address")
 
             elif request.method == 'POST':
-
                 ip_address = request.form.get("ip_address")
+
+            if ip_address == None:
+                ip_address = ''
+                relevant_sessions={}  
+            else:
                 relevant_sessions = backend.get_device_auth_sessions(ip_address)
                 propagate_backend_exception(relevant_sessions)
 
-                return render_template('deviceQuery.html', post_request_done=True, ip_address=ip_address, relevant_sessions=relevant_sessions)
+            return render_template('deviceQuery.html', ip_address=ip_address, relevant_sessions=relevant_sessions)
 
         except Exception as e:
             print(e)
@@ -163,18 +178,20 @@ def switchView():
         print(f"Login for {session['username']} extended until: {ctime(session['logged_in'])}")
         try:    
             if request.method == 'GET':
+                
                 ip_address = request.args.get("ip_address")
 
             elif request.method == 'POST':
+
                 ip_address = request.form.get("ip_address")
 
             if ip_address == None:
                 ip_address = ''
-                detailed_switch_status={}  
+                detailed_switch_status={} 
             else:
                 detailed_switch_status = backend.get_device_ports(ip_address)
                 propagate_backend_exception(detailed_switch_status)
-                
+   
             return render_template('switchView.html', ip_address=ip_address, detailed_switch_status=detailed_switch_status)
 
         except Exception as e:
@@ -278,6 +295,7 @@ def voucher():
         return redirect(url_for('login'))
 
 
+@app.route('/endpointQuery?mac_address=<mac_address>')
 @app.route('/endpointQuery', methods=['GET', 'POST'])
 def endpointQuery():
     '''
@@ -287,21 +305,32 @@ def endpointQuery():
     if type(session.get('logged_in')) == int and session.get('logged_in') > int(time()):
         session['logged_in'] = int(time()) + backend.timeout
         print(f"Login for {session['username']} extended until: {ctime(session['logged_in'])}")
+        mac_address = ''
+        endpoint_list = ''
         try:
             if request.method == 'GET':
 
-                return render_template('endpointQuery.html', post_request_done=False, endpoint_list={}, mac_address='')
+                mac_address = request.args.get("mac_address")
 
             elif request.method == 'POST':
 
                 mac_address = request.form.get("mac_address")
+
+            if mac_address == None:
+                mac_address = ''
+                endpoint_list={}  
+            else:
+                mac_address=normalize_mac_format(mac_address)
                 endpoint_list = backend.check_ise_auth_status(mac_address)
                 propagate_backend_exception(endpoint_list)
 
-                return render_template('endpointQuery.html', post_request_done=True, endpoint_list=endpoint_list, mac_address=mac_address)
+            return render_template('endpointQuery.html', endpoint_list=endpoint_list, mac_address=mac_address)
 
         except Exception as e:
             print(e)
+            if "No authentication events for MAC Address" in repr(e) and "during the last 24.0 hours." in repr(e):
+                return render_template('endpointQuery.html', error=False, no_events=True, endpoint_list={}, mac_address=mac_address)
+
             return render_template('endpointQuery.html', error=True, errorcode=e)
     else:
         print("First you need to login")

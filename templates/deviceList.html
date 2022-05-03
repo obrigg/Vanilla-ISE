@@ -20,8 +20,12 @@
     
                 <!--Alert for error message-->
                 {% include "alert.html" %}
-                <input type="text" id="SwitchInput" onkeyup="SearchFunction()" placeholder="Search for device">
-    
+                <div class="form-group form-group--inline">
+                    <div class="form-group__text">
+                        <input type="text" id="SwitchInput" onkeyup="SearchFunction()" placeholder="Search for device">
+                    </div>
+                </div>
+                
                 <form action="/deviceList" method="POST">
     
                     {% if device_list and error != true %}
@@ -30,9 +34,8 @@
                         <table class="table table--lined table--selectable" id="SwitchTable" >
                             <thead>
                                 <tr>
-                                    <th class="w-33">Device Name</th>
-                                    <th class="w-33">Device IP</th>
-                                    <th class="w-33">Query</th>
+                                    <th class="w-50">Device Name</th>
+                                    <th class="w-50">Device IP</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -43,13 +46,9 @@
                                             {{key}}
                                         </td>
                                         <td>
-                                            {{value}}
-                                        </td>
-                                        <td>
-                                            <button name="ip_address" value={{value}} class="btn btn--link link_btn"
-                                                type="submit" onclick="showLoadingText(this)"
-                                                onload="showOriginalText(this, 'Query')">Query
-                                                Device</button>
+                                            <a class="listitem" href="switchView?ip_address={{value}}">
+                                                {{value}}
+                                            </a>
                                         </td>
                                     </tr>
                                 {% endfor %}

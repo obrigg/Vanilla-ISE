@@ -48,7 +48,9 @@
                                 <tr>
 
                                     <td>
-                                        <span>{{session.EndpointMAC}}</span>
+                                        <a class="listitem" href="endpointQuery?mac_address={{session.EndpointMAC}}">
+                                            <span>{{session.EndpointMAC}}</span>
+                                        </a>
                                     </td>
                                     <td>
                                         <span>{{session.Status}}</span>
@@ -60,7 +62,9 @@
                                         <span>{{session.Username}}</span>
                                     </td>
                                     <td>
-                                        <span>{{session.IPv4}}</span>
+                                        <a class="listitem" href="deviceQuery?ip_address={{session.IPv4}}">
+                                            <span>{{session.IPv4}}</span>
+                                        </a>
                                     </td>
                                     <td>
                                         <span>{{session.Vlan}}</span>
