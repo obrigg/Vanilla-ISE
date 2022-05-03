@@ -582,6 +582,38 @@ def get_port_auth_sessions(device_ip: str, interface: str):
     return(relevant_sessions)
 
 
+def clear_port_auth_sessions(device_ip: str, interface: str):
+    '''
+    This function will clear the authentication sessions of a specific
+    interface on a given switch.
+    '''
+    print('Verifying IP Address validity')
+    try:
+        ip = IPAddress(device_ip)
+        print(f'The IP address is {ip.format()}')
+    except:
+        pp('[red]Error, invalid device IP address')
+        return("ERROR: Invalid IP address")
+    testbed_input = testbed_template
+    testbed_input['devices']['device']['connections']['cli']['ip'] = ip.format()
+    testbed = load(testbed_input)
+    device = testbed.devices['device']
+    # Connect to the device
+    try:
+        device.connect(via='cli', learn_hostname=True)
+    except:
+        pp(f"[red]ERROR: Problem connecting to {device_ip}...")
+        return([f"ERROR: Problem connecting to {device_ip}..."])
+    # Clear authentication sessions
+    try:
+        device.execute(f'clear authentication session interface {interface}')
+    except:
+        pp(f"[red]ERROR: Problem parsing information from {device_ip}.")
+        return([f"ERROR: Problem parsing information from {device_ip}."])
+    pp(f"Cleared authentication sessions on {interface} on {device_ip}.")
+    return(f"Cleared authentication sessions on {interface} on {device_ip}.")
+
+
 def read_voucher_list():
     '''
     Voucher file format:
