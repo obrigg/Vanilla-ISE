@@ -5,6 +5,7 @@ import json
 import xmltodict
 import asyncio
 import logging.handlers
+from rich import print as pp
 from time import time, sleep
 from netaddr import *
 from aiohttp import ClientSession, ClientTimeout, BasicAuth
@@ -141,7 +142,7 @@ def get_all_NADs():
         loop.run_until_complete(future)
         return(NAD_list_details)
     except:
-        print('\033[1;31mAn error has occured trying to fetch the NAD list\033[0m')
+        pp('[red]An error has occured trying to fetch the NAD list')
         return({'ERROR', 'ERROR'})
 
 
@@ -157,7 +158,7 @@ def get_ise_group_id(group_name: str):
         print(f"ISE endpoint group {group_name}, id: {group_id}")
         return(group_id)
     else:
-        print(f"\033[1;31mERROR: Group {group_name} was not found\033[0m")
+        pp(f"[red]ERROR: Group {group_name} was not found")
         return("ERROR")
 
 
@@ -232,10 +233,10 @@ def initialize_ise(name, passw):
             print(f"User {name} has suffecient permissions to login to ISE") 
             return("Done")
         else:
-            print(f"\033[1;31mERROR: Can't access ISE/failed User. Code: {Iresponse.status_code}\033[0m")
+            pp(f"[red]ERROR: Can't access ISE/failed User. Code: {Iresponse.status_code}")
             return("ERROR")
     except requests.exceptions.Timeout:
-        print(f"\033[1;31mTimeout error. Please check ISE connectivity\033[0m")
+        pp(f"[red]Timeout error. Please check ISE connectivity")
         return("ERROR")
 
 
@@ -334,7 +335,7 @@ def get_device_ports(device_ip: str):
         ip = IPAddress(device_ip)
         print(f'The IP address is {ip.format()}')
     except:
-        print('\033[1;31mError, invalid device IP address\033[0m')
+        pp('[red]Error, invalid device IP address')
         return("ERROR: Invalid IP address")
     testbed_input = testbed_template
     testbed_input['devices']['device']['connections']['cli']['ip'] = ip.format()
@@ -344,31 +345,31 @@ def get_device_ports(device_ip: str):
     try:
         device.connect(via='cli', learn_hostname=True)
     except:
-        print(f"\033[1;31mERROR: Problem connecting to {device_ip}...\033[0m")
+        pp(f"[red]ERROR: Problem connecting to {device_ip}...")
         return([f"ERROR: Problem connecting to {device_ip}..."])
     # Get authentication sessions
     try:
         auth_sessions = device.parse(f'show {parse_command}')
     except SchemaEmptyParserError:
-        print(f"\033[1;31mERROR: No access sessions on {device_ip}.\033[0m")
-        return([f"ERROR: No access sessions on {device_ip}."])
+        pp(f"[red]ERROR: No access sessions on {device_ip}.")
+        auth_sessions = {"interfaces": {}}
     except:
-        print(f"\033[1;31mERROR: Problem parsing information from {device_ip}.\033[0m")
+        pp(f"[red]ERROR: Problem parsing information from {device_ip}.")
         return([f"ERROR: Problem parsing information from {device_ip}."])
     # Get interfaces' vlan assignments
     try:
         interfaces_status = device.parse('show interfaces status')
-    except SchemaEmptyParserError:
-        print(f"\033[1;31mERROR: No access sessions on {device_ip}.\033[0m")
-        return([f"ERROR: No access sessions on {device_ip}."])
     except:
-        print(f"\033[1;31mERROR: Problem parsing information from {device_ip}.\033[0m")
+        pp(f"[red]ERROR: Problem parsing information from {device_ip}.")
         return([f"ERROR: Problem parsing information from {device_ip}."])
     #
     # Create the formatted stack units' interface mapping
     #
     results = {"stack_members": 0, "stacks": {}}
     for interface in interfaces_status['interfaces']:
+        # Ignore logical interfaces, e.g. Port-channels.
+        if "/" not in interface:
+            continue
         member_number = re.findall(r'\d+', interface)[0]
         if member_number not in results['stacks'].keys():
             results['stacks'][member_number] = {}
@@ -401,7 +402,7 @@ def get_device_auth_sessions(device_ip: str):
         ip = IPAddress(device_ip)
         print(f'The IP address is {ip.format()}')
     except:
-        print('\033[1;31mError, invalid device IP address\033[0m')
+        pp('[red]Error, invalid device IP address')
         return("ERROR: Invalid IP address")
     testbed_input = testbed_template
     testbed_input['devices']['device']['connections']['cli']['ip'] = ip.format()
@@ -411,25 +412,25 @@ def get_device_auth_sessions(device_ip: str):
     try:
         device.connect(via='cli', learn_hostname=True)
     except:
-        print(f"\033[1;31mERROR: Problem connecting to {device_ip}...\033[0m")
+        pp(f"[red]ERROR: Problem connecting to {device_ip}...")
         return([f"ERROR: Problem connecting to {device_ip}..."])
     # Get authentication sessions
     try:
         auth_sessions = device.parse(f'show {parse_command}')
     except SchemaEmptyParserError:
-        print(f"\033[1;31mERROR: No access sessions on {device_ip}.\033[0m")
+        pp(f"[red]ERROR: No access sessions on {device_ip}.")
         return([f"ERROR: No access sessions on {device_ip}."])
     except:
-        print(f"\033[1;31mERROR: Problem parsing information from {device_ip}.\033[0m")
+        pp(f"[red]ERROR: Problem parsing information from {device_ip}.")
         return([f"ERROR: Problem parsing information from {device_ip}."])
     # Get interfaces' vlan assignments
     try:
         interfaces_status = device.parse('show interfaces status')
     except SchemaEmptyParserError:
-        print(f"\033[1;31mERROR: No access sessions on {device_ip}.\033[0m")
+        pp(f"[red]ERROR: No access sessions on {device_ip}.")
         return([f"ERROR: No access sessions on {device_ip}."])
     except:
-        print(f"\033[1;31mERROR: Problem parsing information from {device_ip}.\033[0m")
+        pp(f"[red]ERROR: Problem parsing information from {device_ip}.")
         return([f"ERROR: Problem parsing information from {device_ip}."])
     relevant_sessions = []
     for interface in auth_sessions['interfaces']:
@@ -474,7 +475,7 @@ def format_mac(mac_address: str):
         mac.dialect = mac_cisco
         return(str(mac))
     except:
-        print("\033[1;31m: Invalid mac address\033[0m")
+        pp(f"[red]ERROR: Invalid mac address")
         return("ERROR")
 
 
@@ -515,7 +516,7 @@ def get_port_auth_sessions(device_ip: str, interface: str):
         ip = IPAddress(device_ip)
         print(f'The IP address is {ip.format()}')
     except:
-        print('\033[1;31mError, invalid device IP address\033[0m')
+        pp('[red]Error, invalid device IP address')
         return("ERROR: Invalid IP address")
     testbed_input = testbed_template
     testbed_input['devices']['device']['connections']['cli']['ip'] = ip.format()
@@ -525,29 +526,29 @@ def get_port_auth_sessions(device_ip: str, interface: str):
     try:
         device.connect(via='cli', learn_hostname=True)
     except:
-        print(f"\033[1;31mERROR: Problem connecting to {device_ip}...\033[0m")
+        pp(f"[red]ERROR: Problem connecting to {device_ip}...")
         return([f"ERROR: Problem connecting to {device_ip}..."])
     # Get authentication sessions
     try:
         auth_sessions = device.parse(f'show {parse_command}')
     except SchemaEmptyParserError:
-        print(f"\033[1;31mERROR: No access sessions on {device_ip}.\033[0m")
+        pp(f"[red]ERROR: No access sessions on {device_ip}.")
         return([f"ERROR: No access sessions on {device_ip}."])
     except:
-        print(f"\033[1;31mERROR: Problem parsing information from {device_ip}.\033[0m")
+        pp(f"[red]ERROR: Problem parsing information from {device_ip}.")
         return([f"ERROR: Problem parsing information from {device_ip}."])
     # Get interfaces' vlan assignments
     try:
         interfaces_status = device.parse('show interfaces status')
     except SchemaEmptyParserError:
-        print(f"\033[1;31mERROR: No access sessions on {device_ip}.\033[0m")
+        pp(f"[red]ERROR: No access sessions on {device_ip}.")
         return([f"ERROR: No access sessions on {device_ip}."])
     except:
-        print(f"\033[1;31mERROR: Problem parsing information from {device_ip}.\033[0m")
+        pp(f"[red]ERROR: Problem parsing information from {device_ip}.")
         return([f"ERROR: Problem parsing information from {device_ip}."])
     relevant_sessions = []
     if interface not in auth_sessions['interfaces'].keys():
-        print(f"\033[1;31mERROR: Interface {interface} has no authentication sessions.\033[0m")
+        pp(f"[red]ERROR: Interface {interface} has no authentication sessions.")
         return([f"ERROR: Interface {interface} has no authentication sessions."])
     else:
         auth_details = device.parse(f"show {parse_command} interface {interface} details")
@@ -618,8 +619,7 @@ def add_voucher(mac_address: str, duration: int, voucher_group: str, user: str):
             # Update the voucher file
             voucher_list = read_voucher_list()
             if any(mac in voucher['mac'] for voucher in voucher_list):
-                print(
-                    f"\033[1;31mERROR: MAC {mac} already has a voucher. Kindly revoke it first.\033[0m")
+                pp(f"[red]ERROR: MAC {mac} already has a voucher. Kindly revoke it first.")
                 return(f"ERROR: MAC {mac} already has a voucher. Kindly revoke it first.")
             else:
                 print(
@@ -631,7 +631,7 @@ def add_voucher(mac_address: str, duration: int, voucher_group: str, user: str):
                 with open('./data/voucher.json', 'w') as f:
                     json.dump(voucher_list, f)
         except:
-            print("\033[1;31mERROR: Wasn't able to update the voucher file\033[0m")
+            pp(f"[red]ERROR: Wasn't able to update the voucher file")
             return("ERROR: Wasn't able to update the voucher file")
         try:
             # Update ISE
@@ -639,10 +639,10 @@ def add_voucher(mac_address: str, duration: int, voucher_group: str, user: str):
             send_syslog(f"Voucher created! MAC: {mac}, duration: {duration} hours, voucher group: {voucher_group}, user: {user}")
             return("Done")
         except:
-            print(f"\033[1;31mERROR: Wasn't able to add {mac} to ISE's voucher list\033[0m")
+            pp(f"[red]ERROR: Wasn't able to add {mac} to ISE's voucher list")
             return(f"ERROR: Wasn't able to add {mac} to ISE's voucher list")
     else:
-        print(f"\033[1;31mERROR: Invalid MAC address: {mac_address}\033[0m")
+        pp(f"[red]ERROR: Invalid MAC address: {mac_address}")
         return("ERROR: Invalid MAC address")
 
 
@@ -665,9 +665,9 @@ def revoke_voucher(mac_address: str, user="system"):
                     with open('./data/voucher.json', 'w') as f:
                         json.dump(voucher_list, f)
         else:
-            print(f"\033[1;31mERROR: MAC address {mac} not found on the voucher list\033[0m")
+            pp(f"[red]ERROR: MAC address {mac} not found on the voucher list")
     except:
-        print("\033[1;31mERROR: Wasn't able to update the voucher file\033[0m")
+        pp(f"[red]ERROR: Wasn't able to update the voucher file")
         return("ERROR: Wasn't able to update the voucher file")
     try:
         # Update ISE
@@ -676,7 +676,7 @@ def revoke_voucher(mac_address: str, user="system"):
         send_syslog(f"Voucher revoked! MAC: {mac}, user: {user}")
         return("Done")
     except:
-        print(f"\033[1;31mERROR: Wasn't able to remove {mac} from ISE's voucher list\033[0m")
+        pp(f"[red]ERROR: Wasn't able to remove {mac} from ISE's voucher list")
         return(f"ERROR: Wasn't able to remove {mac} from ISE's voucher list")
 
 

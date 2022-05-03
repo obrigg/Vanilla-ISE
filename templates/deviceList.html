@@ -26,44 +26,42 @@
                     </div>
                 </div>
                 
-                <form action="/deviceList" method="POST">
-    
-                    {% if device_list and error != true %}
-    
-                    <div class="responsive-table">
-                        <table class="table table--lined table--selectable" id="SwitchTable" >
-                            <thead>
+
+                {% if device_list and error != true %}
+
+                <div class="responsive-table">
+                    <table class="table table--lined table--selectable" id="SwitchTable" >
+                        <thead>
+                            <tr>
+                                <th class="w-50">Device Name</th>
+                                <th class="w-50">Device IP</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            {% for key, value in device_list.items() %}
                                 <tr>
-                                    <th class="w-50">Device Name</th>
-                                    <th class="w-50">Device IP</th>
+                                    <td>
+                                        {{key}}
+                                    </td>
+                                    <td>
+                                        <a class="listitem" href="switchView?ip_address={{value}}">
+                                            {{value}}
+                                        </a>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-    
-                                {% for key, value in device_list.items() %}
-                                    <tr>
-                                        <td>
-                                            {{key}}
-                                        </td>
-                                        <td>
-                                            <a class="listitem" href="switchView?ip_address={{value}}">
-                                                {{value}}
-                                            </a>
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-    
-                            </tbody>
-                        </table>
+                            {% endfor %}
+
+                        </tbody>
+                    </table>
+                </div>
+
+                {% else %}
+                    <div class="no_query">
+                        No devices available.
                     </div>
-    
-                    {% else %}
-                        <div class="no_query">
-                            No devices available.
-                        </div>
-                    {% endif %}
-    
-                </form>
+                {% endif %}
+
             </div>
         </div>
     </div>

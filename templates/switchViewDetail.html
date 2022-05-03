@@ -87,8 +87,16 @@
 
                 {% else %}
 
-                    <div class="no_query">No session information available for this interface.</div>
-                
+                    {% if no_access_session%}
+                        
+                        <div class="no_query">No access sessions on {{ ip_address }}.</div>
+
+                    {% else %}
+
+                        <div class="no_query">No session information available for this interface.</div>
+                    
+                    {% endif %}
+
                 {% endif %}
             </div>
     </div>

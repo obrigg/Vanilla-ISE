@@ -15,7 +15,6 @@ or implied.
 from flask import Flask, render_template, request, url_for, redirect, session
 from requests.auth import HTTPBasicAuth
 import backend
-import mab_cleanup
 from time import ctime, sleep, time
 from threading import Thread
 
@@ -114,17 +113,6 @@ def deviceList():
                 propagate_backend_exception(device_list)
 
                 return render_template('deviceList.html', device_list=device_list)
-
-            elif request.method == 'POST':
-
-                ip_address = request.form.get("ip_address")
-                relevant_sessions = backend.get_device_auth_sessions(ip_address)
-                propagate_backend_exception(relevant_sessions)
-
-                print(relevant_sessions)
-                print(ip_address)
-
-                return render_template('deviceQuery.html', post_request_done=True, ip_address=ip_address, relevant_sessions=relevant_sessions)
 
         except Exception as e:
             print(e)
@@ -230,6 +218,8 @@ def switchViewDetail():
             print(e)
             if "has no authentication sessions" in repr(e):
                 return render_template('switchViewDetail.html', error=False, ip_address=ip_address, interface=interface, relevant_sessions={})
+            elif "No access sessions on" in repr(e):
+                return render_template('switchViewDetail.html', error=False, no_access_session=True, ip_address=ip_address, interface=interface, relevant_sessions={})
 
             return render_template('switchViewDetail.html', error=True, errorcode=e)
 
