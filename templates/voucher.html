@@ -20,8 +20,12 @@
             <!--Alert for error message-->
             {% include "alert.html" %}
             
-            <input type="text" id="VoucherInput" onkeyup="SearchFunction()" placeholder="Search voucher">
-
+            <div class="form-group form-group--inline">
+                <div class="form-group__text">
+                    <input type="text" id="VoucherInput" onkeyup="SearchFunction()" placeholder="Search voucher">
+                </div>
+            </div>
+            
             {%if new_voucher%}
                 <div class="alert alert--success">
                     <div class="alert__icon icon-check-outline"></div>

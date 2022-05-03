@@ -24,71 +24,76 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 -->
 
-<a class="port_link" href="/switchViewDetail?ip_address={{ip_address}}&interface={{interface_key}}">
-    <div class="port tooltip" data-jbox-title="" data-jbox-content="">
-        
-        {% set unauth_clients = namespace(value=False) %}
-        
-        <!--Port tooltip content. Used to dynamically populate the data-jbox-content attribute-->
-        <span class="tooltip_content" hidden>
-            <b>{{interface_key}}</b> <br/>
-            {% for status_key,status_value in interface_details.items() %}
-                {% if status_key == "clients" %}
-                <div class="clients_list">
-                    <b>Clients:</b>
-                    {% for client in status_value %}
-                        {% for client_key,client_value in client.items() %}
-                            <div class="client">
-                                {% if client_value == "Unauth" %}
-                                    {% set unauth_clients.value = True %}
-                                    <img src="{{ url_for('static', filename='images/red_dot.png')}}" style="width: 15px;"/>
-                                {% elif client_value == "Auth" %}
-                                    <img src="{{ url_for('static', filename='images/green_dot.png')}}" style="width: 15px;"/>
-                                {% endif %} 
-                                <b>{{client_value|title}}:</b> {{ client_key}}  
-                            </div>
-                        {% endfor %}
-                    {% endfor %}
-                </div>
-                {% elif status_key == "interface_abbr" %}
-                    <!--do not show-->
-                {% elif status_key == "status" %}
-                    <div class="non_client_list">
-                        {% if status_value == "notconnect" %}
-                            <img src="{{ url_for('static', filename='images/grey_dot.png')}}" style="width: 15px;"/>
-                        {% elif status_value == "connected" %}
-                            <img src="{{ url_for('static', filename='images/green_dot.png')}}" style="width: 15px;"/>
-                        {% endif %} 
-                        <b>{{ status_key|title }}:</b> {{status_value}}
-                    </div>
-                {% else %}
-                    <div class="non_client_list">
-                        <b>{{ status_key|title }}:</b> {{status_value}}
-                    </div>
+<div class="port tooltip" data-jbox-title="" data-jbox-content="" onmousedown="mouseDown(event);">
+
+    {% set unauth_clients = namespace(value=False) %}
+
+    <!--Port tooltip content. Used to dynamically populate the data-jbox-content attribute-->
+    <span class="tooltip_content" hidden>
+        <b>{{interface_key}}</b> <br />
+        {% for status_key,status_value in interface_details.items() %}
+        {% if status_key == "clients" %}
+        <div class="clients_list">
+            <b>Clients:</b>
+            {% for client in status_value %}
+            {% for client_key,client_value in client.items() %}
+            <div class="client">
+                {% if client_value == "Unauth" %}
+                {% set unauth_clients.value = True %}
+                <img src="{{ url_for('static', filename='images/red_dot.png')}}" style="width: 15px;" />
+                {% elif client_value == "Auth" %}
+                <img src="{{ url_for('static', filename='images/green_dot.png')}}" style="width: 15px;" />
                 {% endif %}
+                <b>{{client_value|title}}:</b> {{ client_key}}
+            </div>
             {% endfor %}
-        </span>
-
-        <!--Port name for first row ports-->
-        {% if count.value == 0%}<div class="port_name">{{ interface_details.interface_abbr }}</div>{% endif %}
-
-        <!--Port image-->
-        {% if interface_details.status == "connected" and unauth_clients.value == False %}
-        <img class="port_image {% if count.value != 0%}rotated_180{% endif %}"
-            src="{{ url_for('static', filename='images/green_port.png')}}" />
-        {% elif unauth_clients.value == True %}
-        <img class="port_image {% if count.value != 0%}rotated_180{% endif %}"
-            src="{{ url_for('static', filename='images/red_port.png')}}" />
+            {% endfor %}
+        </div>
+        {% elif status_key == "interface_abbr" %}
+        <!--do not show-->
+        {% elif status_key == "status" %}
+        <div class="non_client_list">
+            {% if status_value == "notconnect" %}
+            <img src="{{ url_for('static', filename='images/grey_dot.png')}}" style="width: 15px;" />
+            {% elif status_value == "connected" %}
+            <img src="{{ url_for('static', filename='images/green_dot.png')}}" style="width: 15px;" />
+            {% endif %}
+            <b>{{ status_key|title }}:</b> {{status_value}}
+        </div>
         {% else %}
-        <img class="port_image {% if count.value != 0%}rotated_180{% endif %}"
-            src="{{ url_for('static', filename='images/grey_port.png')}}" />
+        <div class="non_client_list">
+            <b>{{ status_key|title }}:</b> {{status_value}}
+        </div>
         {% endif %}
+        {% endfor %}
+    </span>
 
-        <!--Port name for second row ports-->
-        {% if count.value != 0%}<div class="port_name">{{ interface_details.interface_abbr }}</div>{% endif %}
+    <!--Context Menu-->
+    <ul class="port_context_menu" hidden {% if count.value != 0%}style="margin-top: 20px !important;"{% endif %}>
+        <li><a class="port_context_menu_action port_detail_link" href="/switchViewDetail?ip_address={{ip_address}}&interface={{interface_key}}">View Port Sessions</a></li>
+        <li><a class="port_context_menu_action">Clear Port</a></li>
+        <li><a class="port_context_menu_action">Bypass Port</a></li>
+    </ul>
 
-    </div>
-</a>
+    <!--Port name for first row ports-->
+    {% if count.value == 0%}<div class="port_name">{{ interface_details.interface_abbr }}</div>{% endif %}
+
+    <!--Port image-->
+    {% if interface_details.status == "connected" and unauth_clients.value == False %}
+    <img class="port_image {% if count.value != 0%}rotated_180{% endif %}"
+        src="{{ url_for('static', filename='images/green_port.png')}}" />
+    {% elif unauth_clients.value == True %}
+    <img class="port_image {% if count.value != 0%}rotated_180{% endif %}"
+        src="{{ url_for('static', filename='images/red_port.png')}}" />
+    {% else %}
+    <img class="port_image {% if count.value != 0%}rotated_180{% endif %}"
+        src="{{ url_for('static', filename='images/grey_port.png')}}" />
+    {% endif %}
+
+    <!--Port name for second row ports-->
+    {% if count.value != 0%}<div class="port_name">{{ interface_details.interface_abbr }}</div>{% endif %}
+
+</div>
 
 <script>
     $(document).ready(function () {
@@ -108,5 +113,37 @@ SOFTWARE.
         });
 
     });
-</script>
 
+    /*Hide all context menues on mousedown. Click handler on port has priority */
+    document.body.addEventListener('mousedown', hideContextMenus, true)
+    function hideContextMenus(){
+        $(".port_context_menu").each(function (index) {
+            $(this).hide();
+        });
+    }
+
+    /*Show custom context menu on right click on port*/
+    function mouseDown(e) {
+        switch (e.which) {
+            case 1:
+                /*Left Mouse button pressed*/
+                var port_link = $(e.target).parents('div.port.tooltip').find('.port_detail_link').attr('href');
+                window.location.href = port_link;
+                break;
+            case 2:
+                /*Middle Mouse button pressed*/
+                break;
+            case 3:
+                /*Right Mouse button pressed*/
+                var port_context_menu = $(e.target).parents('div.port.tooltip').find('.port_context_menu');
+                port_context_menu.show();
+                break;
+            default:
+                /*None of the above pressed*/
+        }
+    }
+
+    /*Disable native browser context menu within switch graph*/
+    $('.stack').bind("contextmenu", function (e) { return false; });
+
+</script>

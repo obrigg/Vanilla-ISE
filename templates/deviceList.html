@@ -20,51 +20,48 @@
     
                 <!--Alert for error message-->
                 {% include "alert.html" %}
-                <input type="text" id="SwitchInput" onkeyup="SearchFunction()" placeholder="Search for device">
-    
-                <form action="/deviceList" method="POST">
-    
-                    {% if device_list and error != true %}
-    
-                    <div class="responsive-table">
-                        <table class="table table--lined table--selectable" id="SwitchTable" >
-                            <thead>
-                                <tr>
-                                    <th class="w-33">Device Name</th>
-                                    <th class="w-33">Device IP</th>
-                                    <th class="w-33">Query</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-    
-                                {% for key, value in device_list.items() %}
-                                    <tr>
-                                        <td>
-                                            {{key}}
-                                        </td>
-                                        <td>
-                                            {{value}}
-                                        </td>
-                                        <td>
-                                            <button name="ip_address" value={{value}} class="btn btn--link link_btn"
-                                                type="submit" onclick="showLoadingText(this)"
-                                                onload="showOriginalText(this, 'Query')">Switch
-                                                View</button>
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-    
-                            </tbody>
-                        </table>
+                <div class="form-group form-group--inline">
+                    <div class="form-group__text">
+                        <input type="text" id="SwitchInput" onkeyup="SearchFunction()" placeholder="Search for device">
                     </div>
-    
-                    {% else %}
-                        <div class="no_query">
-                            No devices available.
-                        </div>
-                    {% endif %}
-    
-                </form>
+                </div>
+                
+
+                {% if device_list and error != true %}
+
+                <div class="responsive-table">
+                    <table class="table table--lined table--selectable" id="SwitchTable" >
+                        <thead>
+                            <tr>
+                                <th class="w-50">Device Name</th>
+                                <th class="w-50">Device IP</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            {% for key, value in device_list.items() %}
+                                <tr>
+                                    <td>
+                                        {{key}}
+                                    </td>
+                                    <td>
+                                        <a class="listitem" href="switchView?ip_address={{value}}">
+                                            {{value}}
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+
+                        </tbody>
+                    </table>
+                </div>
+
+                {% else %}
+                    <div class="no_query">
+                        No devices available.
+                    </div>
+                {% endif %}
+
             </div>
         </div>
     </div>

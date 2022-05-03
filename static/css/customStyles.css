@@ -147,6 +147,7 @@ ul.list-group{
     height: auto !important;
     border: none !important;
     width: 56px;
+    cursor: pointer;
 }
 
 .port_image{
@@ -174,8 +175,44 @@ ul.list-group{
     transform: rotate(180deg);
 }
 
-/*Box.js tooltip*/
+.port_context_menu{
+    position: absolute;
+    z-index: 99;
+    background: white;
+    border: 1px solid #f2f2f2;
+    margin-left: 20px !important;
+    margin-top: 50px !important;
+    box-shadow: 1px 1px 2px rgb(200 200 200 / 15%);
+    list-style: none;
+    overflow: hidden auto;
+    pointer-events: auto;
+    text-align: left;
+    padding: 0 !important;
+    font-size: small;
+    width: fit-content;
+    cursor: pointer;
+}
 
+.port_context_menu li{
+    padding: 5px 15px 5px 10px;
+    width: 100%;
+    position: relative;
+    text-overflow: ellipsis;
+    text-decoration: none;
+    text-align: left;
+}
+
+.port_context_menu li:hover{
+    background-color:#f2f2f2;
+}
+
+.port_context_menu li a, .port_context_menu li a:hover{
+    color: black !important;
+    text-decoration: none !important;
+}
+
+
+/*Box.js tooltip*/
 .jBox-Mouse .jBox-container, .jBox-Tooltip .jBox-container{
     box-shadow: 1px 1px 2px rgb(200 200 200 / 15%) !important;
     border-radius: 2px;
