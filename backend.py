@@ -716,8 +716,8 @@ def add_port_voucher(device_ip: str, interface: str, duration: int, user: str):
     # Check for dot1x commands
     if "source_template" in interface_config['interfaces'][interface]:
         command = f"source template {interface_config['interfaces'][interface]['source_template']}"
-    elif "sdgf" in interface_config['interfaces'][interface]:
-        command = f"source-interface {interface_config['interfaces'][interface]['sdgf']}"
+    elif "dot1x_pae_authenticator" in interface_config['interfaces'][interface]:
+        command = f"dot1x pae authenticator"
     else:
         pp(f"[red]ERROR: No dot1x command found on {device_ip}.")
         return(f"ERROR: No dot1x command found on {device_ip}.")
