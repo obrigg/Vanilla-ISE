@@ -19,6 +19,13 @@
             <!--Alert for error message-->
             {% include "alert.html" %}
 
+            {%if success%}
+                <div class="alert alert--success">
+                    <div class="alert__icon icon-check-outline"></div>
+                    <div class="alert__message">Action successfully completed.</div>
+                </div>
+            {% endif %}
+
             <form action="/switchView" method="POST">
 
                 <div class="form-group form-group--inline">

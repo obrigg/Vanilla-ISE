@@ -163,7 +163,7 @@ def deviceQuery():
         return redirect(url_for('login'))
 
 
-app.route('/switchView?ip_address=<ip_address>')
+app.route('/switchView?ip_address=<ip_address>&success=<success>')
 @app.route('/switchView', methods=['GET', 'POST'])
 def switchView():
     '''
@@ -180,6 +180,8 @@ def switchView():
             elif request.method == 'POST':
 
                 ip_address = request.form.get("ip_address")
+            
+            success = request.args.get("success")
 
             if ip_address == None:
                 ip_address = ''
@@ -188,11 +190,40 @@ def switchView():
                 detailed_switch_status = backend.get_device_ports(ip_address)
                 propagate_backend_exception(detailed_switch_status)
    
-            return render_template('switchView.html', ip_address=ip_address, detailed_switch_status=detailed_switch_status)
+            return render_template('switchView.html', ip_address=ip_address, success=success, detailed_switch_status=detailed_switch_status)
 
         except Exception as e:
             print(e)
             return render_template('switchView.html', error=True, errorcode=e)
+    else:
+        print("First you need to login")
+        return redirect(url_for('login'))
+
+
+app.route('/portAction?ip_address=<ip_address>&interface=<interface>&action=<action>')
+@app.route('/portAction', methods=['GET', 'POST'])
+def portAction():
+    '''
+    This function handles the port actions: clear port sessions and bypass.
+    '''
+    if type(session.get('logged_in')) == int and session.get('logged_in') > int(time()):
+        session['logged_in'] = int(time()) + backend.timeout
+        print(f"Login for {session['username']} extended until: {ctime(session['logged_in'])}")
+        try: 
+            ip_address = request.args.get("ip_address")
+            interface = request.args.get("interface")
+            action = request.args.get("action")
+
+            if action == 'clear':
+                backend.clear_port_auth_sessions(ip_address, interface)
+            elif action == 'bypass':
+                backend.add_port_voucher(ip_address, interface, 24, session['username'])
+
+            return redirect('/switchView?ip_address='+ip_address+'&success=True') 
+
+        except Exception as e:
+                print(e)
+                return render_template('switchView.html', error=True, errorcode=e)
     else:
         print("First you need to login")
         return redirect(url_for('login'))

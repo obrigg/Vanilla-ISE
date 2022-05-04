@@ -70,9 +70,9 @@ SOFTWARE.
 
     <!--Context Menu-->
     <ul class="port_context_menu" hidden {% if count.value != 0%}style="margin-top: 20px !important;"{% endif %}>
-        <li><a class="port_context_menu_action port_detail_link" href="/switchViewDetail?ip_address={{ip_address}}&interface={{interface_key}}">View Port Sessions</a></li>
-        <li><a class="port_context_menu_action">Clear Port</a></li>
-        <li><a class="port_context_menu_action">Bypass Port</a></li>
+        <li class="port_context_menu_li"><a class="port_context_menu_action port_detail_link" href="/switchViewDetail?ip_address={{ip_address}}&interface={{interface_key}}">View Port Sessions</a></li>
+        <li class="port_context_menu_li"><a class="port_context_menu_action" href="/portAction?ip_address={{ip_address}}&interface={{interface_key}}&action=clear">Clear Port Sessions</a></li>
+        <li class="port_context_menu_li"><a class="port_context_menu_action" href="/portAction?ip_address={{ip_address}}&interface={{interface_key}}&action=bypass">Bypass Port</a></li>
     </ul>
 
     <!--Port name for first row ports-->
@@ -122,13 +122,21 @@ SOFTWARE.
         });
     }
 
-    /*Show custom context menu on right click on port*/
+    /*Mouse down event handler for port and context menu*/
     function mouseDown(e) {
         switch (e.which) {
             case 1:
                 /*Left Mouse button pressed*/
-                var port_link = $(e.target).parents('div.port.tooltip').find('.port_detail_link').attr('href');
-                window.location.href = port_link;
+                var target_element = $(event.target);
+                var url = '';
+                if(target_element.attr('class') == 'port_context_menu_action'){
+                    url = target_element.attr('href'); 
+                }else if(target_element.attr('class') == 'port_context_menu_li'){
+                    url = event.target.querySelector('a').href;
+                }else{
+                    url = target_element.parents('div.port.tooltip').find('.port_detail_link').attr('href');
+                }
+                window.location.href = url;
                 break;
             case 2:
                 /*Middle Mouse button pressed*/
