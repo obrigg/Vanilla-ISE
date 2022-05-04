@@ -1,3 +1,9 @@
+__version__ = '22.05.04.1'
+__author__ = 'Oren Brigg & Ramona Renner'
+__author_email__ = 'obrigg@cisco.com / ramrenne@cisco.com'
+__license__ = "Cisco Sample Code License, Version 1.1 - https://developer.cisco.com/site/license/cisco-sample-code-license/"
+
+
 """ Copyright (c) 2021 Cisco and/or its affiliates.
 This software is licensed to you under the terms of the Cisco Sample
 Code License, Version 1.1 (the "License"). You may obtain a copy of the

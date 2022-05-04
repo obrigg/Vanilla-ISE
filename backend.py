@@ -1,3 +1,9 @@
+__version__ = '22.05.04.1'
+__author__ = 'Oren Brigg & Ramona Renner'
+__author_email__ = 'obrigg@cisco.com / ramrenne@cisco.com'
+__license__ = "Cisco Sample Code License, Version 1.1 - https://developer.cisco.com/site/license/cisco-sample-code-license/"
+
+
 import re
 import os
 import requests
