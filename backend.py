@@ -7,6 +7,7 @@ import asyncio
 import logging.handlers
 from rich import print as pp
 from time import time, sleep
+from collections import OrderedDict
 from netaddr import *
 from aiohttp import ClientSession, ClientTimeout, BasicAuth
 from genie.testbed import load
@@ -133,14 +134,17 @@ def get_all_NADs():
                 url = NAD_list['SearchResult']['nextPage']['href']
             else:
                 isDone = True       
-        print(f"Found {len(complete_NAD_list)} NADs.")
+        print(f"Found {len(complete_NAD_list)} NADs. Fetching details...")
         
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         #loop = asyncio.get_event_loop()
         future = asyncio.ensure_future(get_NAD_details())
         loop.run_until_complete(future)
-        return(NAD_list_details)
+        # Sorting the list
+        pp(NAD_list_details)
+        sorted_NAD_list = OrderedDict(sorted(NAD_list_details.items(), key=lambda x: x[1]))
+        return(sorted_NAD_list)
     except:
         pp('[red]An error has occured trying to fetch the NAD list')
         return({'ERROR', 'ERROR'})
