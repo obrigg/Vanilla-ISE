@@ -1,3 +1,9 @@
+__version__ = '22.05.04.1'
+__author__ = 'Oren Brigg & Ramona Renner'
+__author_email__ = 'obrigg@cisco.com / ramrenne@cisco.com'
+__license__ = "Cisco Sample Code License, Version 1.1 - https://developer.cisco.com/site/license/cisco-sample-code-license/"
+
+
 import re
 import os
 import requests
@@ -716,8 +722,8 @@ def add_port_voucher(device_ip: str, interface: str, duration: int, user: str):
     # Check for dot1x commands
     if "source_template" in interface_config['interfaces'][interface]:
         command = f"source template {interface_config['interfaces'][interface]['source_template']}"
-    elif "sdgf" in interface_config['interfaces'][interface]:
-        command = f"source-interface {interface_config['interfaces'][interface]['sdgf']}"
+    elif "dot1x_pae_authenticator" in interface_config['interfaces'][interface]:
+        command = f"dot1x pae authenticator"
     else:
         pp(f"[red]ERROR: No dot1x command found on {device_ip}.")
         return(f"ERROR: No dot1x command found on {device_ip}.")
