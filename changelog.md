@@ -1,7 +1,9 @@
 # Change log
-##### 29-April-2022
+##### 05-May-2022
 * Added a page with a graphical representation of a switch and its port statuses.
 * For each port, a detail page with the session information for the specific port was added.
+* Ability to clear the authentication sessions for specific interfaces - by right clicking a port in the switch view, and choosing "Clear port".
+* Ability to create a "port voucher", temporarily disabling dot1x on that interface for 24 hours.
 
 ##### 23-February-2022
 * Documentation updates/clarifications, thanks to Roddie.

@@ -29,8 +29,14 @@ Using Cisco ISE's open APIs, primarily ERS (External RESTful Services), we have 
   * <span style="color:red">Red</span>: Unauthenticated endpoint(s).
   * <span style="color:grey">Grey</span>: The interface is not connected.
   
-<img src="img/switch_view.png">
-<img src="img/switch_view_port.png">
+  <img src="img/switch_view.png">
+  <img src="img/switch_view_port.png">
+
+* The switch view enables new capabilities:
+  * Clear port sessions: issues the `clear authentication session interface <interface>` command on the interface, clearing existing authentication sessions (quicker and less disruptive than shut/no shut)
+  * Bypass port: (AKA port voucher) temporarily removes the dot1x configuration from the interface for 24 hours. The bypassed interface will appear in the vouchers page and can be revoked from that page. 
+  
+  <img src="img/switch_view_port_menu.png">
 
 * Query a network device for current authentication sessions.
 <img src="img/device query.png">
