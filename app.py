@@ -287,7 +287,7 @@ def voucher():
 
                 #Add
                 if(submit_type == "add"):
-                    form_mac_address = request.form.get("mac_address_field")
+                    form_mac_address = normalize_mac_format(request.form.get("mac_address_field"))
                     voucher_duration = request.form.get("voucher_duration")
                     voucher_group = request.form.get("voucher_group")
 
