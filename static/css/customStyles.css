@@ -226,4 +226,7 @@ ul.list-group{
 
 .table_headline{
     text-align: center;
+    font-weight: bold;
+    font-size: larger;
+    text-decoration: underline;
 }
