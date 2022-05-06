@@ -696,6 +696,20 @@ def add_port_voucher(device_ip: str, interface: str, duration: int, user: str):
     removes its dot1x command from the switch (storing it in the voucher 
     for restoration later).
     '''
+    try:
+        voucher_list = read_voucher_list()
+        # Checking if the voucher already exists
+        for voucher in voucher_list:
+            if voucher['type'] == "port":
+                if voucher['switch_ip'] == device_ip and voucher['interface'] == interface:
+                    pp(f"[red]ERROR: {interface} on {device_ip} already has a voucher. Kindly revoke it first.")
+                    return(f"ERROR: {interface} on {device_ip} already has a voucher. Kindly revoke it first.")
+    except:
+        pp(f"[red]ERROR: Wasn't able to read the voucher file")
+        return("ERROR: Wasn't able to read the voucher file")
+    #
+    # Voucher not found - update switch settings
+    #
     print('Verifying IP Address validity')
     try:
         ip = IPAddress(device_ip)
@@ -707,7 +721,9 @@ def add_port_voucher(device_ip: str, interface: str, duration: int, user: str):
     testbed_input['devices']['device']['connections']['cli']['ip'] = ip.format()
     testbed = load(testbed_input)
     device = testbed.devices['device']
+    #
     # Connect to the device
+    #
     try:
         device.connect(via='cli', learn_hostname=True)
     except:
@@ -733,16 +749,10 @@ def add_port_voucher(device_ip: str, interface: str, duration: int, user: str):
     except:
         pp(f"[red]ERROR: Problem removing the command {command} from {interface} on {device_ip}.")
         return([f"ERROR: Problem removing dot1x configuration from {device_ip}."])
+    #
     # Update the voucher file
+    #
     try:
-        voucher_list = read_voucher_list()
-        # Checking if the voucher already exists
-        for voucher in voucher_list:
-            if voucher['type'] == "port":
-                if voucher['switch_ip'] == device_ip and voucher['interface'] == interface:
-                    pp(f"[red]ERROR: {device_ip} already has a voucher. Kindly revoke it first.")
-                    return(f"ERROR: {device_ip} already has a voucher. Kindly revoke it first.")
-        # Voucher not found - create a new one
         print(f"Adding {interface} on switch {device_ip} with a duration of {duration} hours, user: {user}")
         voucher = {"type": "port", "switch_ip": device_ip, 
             "duration": int(time()) + duration*60*60,
