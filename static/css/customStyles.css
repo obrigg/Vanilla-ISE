@@ -117,3 +117,116 @@ ul.list-group{
 .btn{
     white-space:nowrap !important;
 }
+
+
+/*Switch Graph*/
+.stack{
+    margin: 20px 0;
+}
+
+.switch_name{
+    font-weight:bold;
+}
+
+.port-container{
+    background-color: var(--cui-color-white);
+    border: 1px solid var(--cui-color-gray-300);
+    padding: 20px;
+    margin: 10px 20px 20px 0px;
+    display: flex; justify-content: flex-start;
+    width: min-content;
+}
+
+.port_pair{ 
+    align-self: start;
+}
+.port{
+    display: flex !important;
+    flex-direction: column; 
+    flex-wrap: wrap;
+    height: auto !important;
+    border: none !important;
+    width: 56px;
+    cursor: pointer;
+}
+
+.port_image{
+    align-self: center;
+    z-index: 10;
+}
+
+.port_name{
+    align-self: center; 
+    padding: 4px;
+    font-size: smaller;
+}
+
+.port_link{
+    text-decoration: none !important;
+    color: var(--cui-color-gray-600) !important;
+
+}
+
+.rotated_180{
+    -webkit-transform:rotate(180deg);
+    -moz-transform: rotate(180deg);
+    -ms-transform: rotate(180deg);
+    -o-transform: rotate(180deg);
+    transform: rotate(180deg);
+}
+
+.port_context_menu{
+    position: absolute;
+    z-index: 99;
+    background: white;
+    border: 1px solid #f2f2f2;
+    margin-left: 20px !important;
+    margin-top: 50px !important;
+    box-shadow: 1px 1px 2px rgb(200 200 200 / 15%);
+    list-style: none;
+    overflow: hidden auto;
+    pointer-events: auto;
+    text-align: left;
+    padding: 0 !important;
+    font-size: small;
+    width: fit-content;
+    cursor: pointer;
+}
+
+.port_context_menu li{
+    padding: 5px 15px 5px 10px;
+    width: 100%;
+    position: relative;
+    text-overflow: ellipsis;
+    text-decoration: none;
+    text-align: left;
+}
+
+.port_context_menu li:hover{
+    background-color:#f2f2f2;
+}
+
+.port_context_menu li a, .port_context_menu li a:hover{
+    color: black !important;
+    text-decoration: none !important;
+}
+
+
+/*Box.js tooltip*/
+.jBox-Mouse .jBox-container, .jBox-Tooltip .jBox-container{
+    box-shadow: 1px 1px 2px rgb(200 200 200 / 15%) !important;
+    border-radius: 2px;
+}
+
+.jBox-pointer:after, .jBox-pointer:before{
+    box-shadow: 1px 1px 2px rgb(200 200 200 / 15%) !important;
+}
+
+/*Voucher page*/
+
+.table_headline{
+    text-align: center;
+    font-weight: bold;
+    font-size: larger;
+    text-decoration: underline;
+}

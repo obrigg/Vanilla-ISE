@@ -20,8 +20,12 @@
             <!--Alert for error message-->
             {% include "alert.html" %}
             
-            <input type="text" id="VoucherInput" onkeyup="SearchFunction()" placeholder="Search voucher">
-
+            <div class="form-group form-group--inline">
+                <div class="form-group__text">
+                    <input type="text" id="VoucherInput" onkeyup="SearchFunction()" placeholder="Search voucher">
+                </div>
+            </div>
+            
             {%if new_voucher%}
                 <div class="alert alert--success">
                     <div class="alert__icon icon-check-outline"></div>
@@ -39,12 +43,17 @@
             <button type="button" class="btn" onclick="openModal('modal-small')"
                 style="float:right;">Add Voucher</button>
             
-            <!--Voucher list-->
-            {%if voucher_list %}
-                <form id="voucher_revoke_form" action="/voucher" method="POST">
+            <!--Voucher lists-->  
+
+            {% set hosts_available = namespace(value=False) %}
+            {% set ports_available = namespace(value=False) %}
+            <!--Host Voucher list-->
+                <form id="voucher_revoke_form" class="dbl-padding-top"  action="/voucher" method="POST">
+
+                    <div class="table_headline">Host Vouchers</div>
 
                     <div class="responsive-table">
-                        <table class="table table--lined table--selectable table" id="VoucherTable">
+                        <table class="VoucherTable table table--lined table--selectable table">
                             <thead>
                                 <tr>
                                     <th class="w-20">MAC Address</span></th>
@@ -57,13 +66,69 @@
                             <tbody>
 
                                 {% for voucher in voucher_list %}
-                                
+                                    {% if voucher.type == 'host' %}
+                                    {% set hosts_available.value = True %}
+                                    <tr>
+                                        <td>
+                                            <a class="listitem" href="endpointQuery?mac_address={{voucher.mac}}">
+                                                {{voucher.mac}}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            {{voucher.group}}
+                                        </td>
+                                        <td>
+                                            {{voucher.ExpDate}}
+                                        </td>
+                                        <td>
+                                            {{voucher.user}}
+                                        </td>
+                                        <td>
+                                            <input type="hidden" name="host_mac" value="{{voucher.mac}}">
+                                            <button name="voucher_sumbit" value="revoke_host"
+                                                class="btn btn--link link_btn" type="submit" onclick="showLoadingText(this)"
+                                                onload="showOriginalText(this, 'Revoke')">Revoke</button>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+               
+                </form>
+                {% if hosts_available.value == False %}
+                    <div class="no_query">No host vouchers available yet.</div>
+                {% endif %}
+
+            <!--Port Voucher list-->
+            <form id="voucher_revoke_form" class="dbl-padding-top" action="/voucher" method="POST">
+                <div class="table_headline">Port Vouchers</div>
+
+                <div class="responsive-table">
+                    <table class="VoucherTable table table--lined table--selectable table">
+                        <thead>
+                            <tr>
+                                <th class="w-20">Switch IP Address</span></th>
+                                <th class="w-20">Interface</span></th>
+                                <th class="w-20">Expiration Time (UTC)</th>
+                                <th class="w-20">Created by</th>
+                                <th class="w-20">Revoke</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            {% for voucher in voucher_list %}
+                                {% if voucher.type == 'port' %}
+                                {% set ports_available.value = True %}
                                 <tr>
                                     <td>
-                                        {{voucher.MACAddress}}
+                                        <a class="listitem" href="switchView?ip_address={{voucher.switch_ip}}">
+                                            {{voucher.switch_ip}}
+                                        </a>
                                     </td>
                                     <td>
-                                        {{voucher.group}}
+                                        {{voucher.interface}}
                                     </td>
                                     <td>
                                         {{voucher.ExpDate}}
@@ -72,20 +137,22 @@
                                         {{voucher.user}}
                                     </td>
                                     <td>
-                                        <button name="voucher_sumbit" value="{{voucher.MACAddress}}"
+                                        <input type="hidden" name="port_switch_ip" value="{{voucher.switch_ip}}">
+                                        <input type="hidden" name="port_interface" value="{{voucher.interface}}">
+                                        <input type="hidden" name="port_command" value="{{voucher.command}}">
+                                        <button name="voucher_sumbit" value="revoke_port"
                                             class="btn btn--link link_btn" type="submit" onclick="showLoadingText(this)"
                                             onload="showOriginalText(this, 'Revoke')">Revoke</button>
                                     </td>
                                 </tr>
-                                {% endfor %}
-
-                            </tbody>
-                        </table>
-                    </div>
-                </form>
-                
-            {% else %}
-                <div class="no_query">No vouchers available yet.</div>
+                                {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </form>
+            {% if ports_available.value == False %}
+                <div class="no_query">No port vouchers available yet.</div>
             {% endif %}
 
 
@@ -108,11 +175,8 @@
                                         <div class="form-group__text">
                                             <input type="text" value="{{mac_address}}"
                                                 name="mac_address_field" required 
-                                                pattern="^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$">
+                                                pattern="^([0-9A-Fa-f]{2}[:.-]?){5}[0-9A-Fa-f]{2}$">
                                             <label for="input-layout-inline-1">MAC Address</label>
-                                        </div>
-                                        <div class="help-block" role="alert">
-                                            <span>Format: xx:xx:xx:xx:xx:xx</span>
                                         </div>
                                     </div>
 
@@ -143,7 +207,7 @@
                                     </div>
 
                                     <div class="form-group">
-                                        <button value="Add" name="voucher_sumbit" class="btn btn--primary" type="submit"
+                                        <button value="add" name="voucher_sumbit" class="btn btn--primary" type="submit"
                                             onclick="showLoadingText(this)"
                                             onload="showOriginalText(this, 'Add')">Add</button>
                                     </div>
@@ -163,16 +227,18 @@
         var input, filter, table, tr, td, i, txtValue;
         input = document.getElementById("VoucherInput");
         filter = input.value.toUpperCase();
-        table = document.getElementById("VoucherTable");
-        tr = table.getElementsByTagName("tr");
-        for (i = 0; i < tr.length; i++) {
-            td = tr[i].getElementsByTagName("td")[0];
-            if (td) {
-                txtValue = td.textContent || td.innerText;
-                if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                    tr[i].style.display = "";
-                } else {
-                    tr[i].style.display = "none";
+        table = document.getElementsByClassName("VoucherTable");
+        for(j = 0; j < table.length; j++){
+            tr = table[j].getElementsByTagName("tr");
+            for (i = 0; i < tr.length; i++) {
+                td = tr[i].getElementsByTagName("td")[0];
+                if (td) {
+                    txtValue = td.textContent || td.innerText;
+                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        tr[i].style.display = "";
+                    } else {
+                        tr[i].style.display = "none";
+                    }
                 }
             }
         }

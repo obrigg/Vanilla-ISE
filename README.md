@@ -24,15 +24,34 @@ Using Cisco ISE's open APIs, primarily ERS (External RESTful Services), we have 
 ### Vanilla ISE's Capabilities:
 * List the network access devices configured on ISE.
 <img src="img/device list.png">
+* Switch view provides a graphical representation of the switch. Which ports are up/down, authenticated or unauthenticated. Clicking a port will provide more details about the endpoint behind the port (similar to device query - but shorter response time).
+  * <span style="color:green">Green</span>: Authenticated endpoint(s).
+  * <span style="color:red">Red</span>: Unauthenticated endpoint(s).
+  * <span style="color:grey">Grey</span>: The interface is not connected.
+  
+  <img src="img/switch_view.png">
+  <img src="img/switch_view_port.png">
+
+* The switch view enables new capabilities:
+  * Clear port sessions: issues the `clear authentication session interface <interface>` command on the interface, clearing existing authentication sessions (quicker and less disruptive than shut/no shut)
+  * Bypass port: (AKA port voucher) temporarily removes the dot1x configuration from the interface for 24 hours. The bypassed interface will appear in the vouchers page and can be revoked from that page. 
+  
+  <img src="img/switch_view_port_menu.png">
+
 * Query a network device for current authentication sessions.
 <img src="img/device query.png">
+
 * Query a specific endpoint for details (status, NAD's IP and interface, authentication mechanism, username, and failure reason - if failed)
 <img src="img/endpoint query.png">
+
 * Grant and revoke network access "vouchers".
 <img src="img/voucher list.png">
 <img src="img/add voucher.png">
+
 * **Vanilla ISE now requires authentication**. Use the your ISE credentials to authenticate to Vanilla ISE.
+
 * Auditing: Vanilla ISE will keep track of the users creating and revoking vouchers, as well as send audit messages to a syslog server configured in the environment variables.
+
 ##### Communication with the devices, and data parsing is powered by <img src="/img/pyats.png">
 More information about pyATS is available at: https://developer.cisco.com/pyats/
 ## Running vanilla ISE:

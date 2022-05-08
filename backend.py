@@ -1,16 +1,24 @@
+__version__ = '22.05.04.1'
+__author__ = 'Oren Brigg & Ramona Renner'
+__author_email__ = 'obrigg@cisco.com / ramrenne@cisco.com'
+__license__ = "Cisco Sample Code License, Version 1.1 - https://developer.cisco.com/site/license/cisco-sample-code-license/"
+
+
 import re
-from genie.metaparser.util.exceptions import SchemaEmptyParserError
 import os
 import requests
 import json
 import xmltodict
 import asyncio
 import logging.handlers
+from rich import print as pp
 from time import time, sleep
+from collections import OrderedDict
 from netaddr import *
 from aiohttp import ClientSession, ClientTimeout, BasicAuth
 from genie.testbed import load
 from requests.auth import HTTPBasicAuth
+from genie.metaparser.util.exceptions import SchemaEmptyParserError
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
@@ -132,16 +140,19 @@ def get_all_NADs():
                 url = NAD_list['SearchResult']['nextPage']['href']
             else:
                 isDone = True       
-        print(f"Found {len(complete_NAD_list)} NADs.")
+        print(f"Found {len(complete_NAD_list)} NADs. Fetching details...")
         
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         #loop = asyncio.get_event_loop()
         future = asyncio.ensure_future(get_NAD_details())
         loop.run_until_complete(future)
-        return(NAD_list_details)
+        # Sorting the list
+        pp(NAD_list_details)
+        sorted_NAD_list = OrderedDict(sorted(NAD_list_details.items(), key=lambda x: x[1]))
+        return(sorted_NAD_list)
     except:
-        print('\033[1;31mAn error has occured trying to fetch the NAD list\033[0m')
+        pp('[red]An error has occured trying to fetch the NAD list')
         return({'ERROR', 'ERROR'})
 
 
@@ -157,7 +168,7 @@ def get_ise_group_id(group_name: str):
         print(f"ISE endpoint group {group_name}, id: {group_id}")
         return(group_id)
     else:
-        print(f"\033[1;31mERROR: Group {group_name} was not found\033[0m")
+        pp(f"[red]ERROR: Group {group_name} was not found")
         return("ERROR")
 
 
@@ -232,10 +243,10 @@ def initialize_ise(name, passw):
             print(f"User {name} has suffecient permissions to login to ISE") 
             return("Done")
         else:
-            print(f"\033[1;31mERROR: Can't access ISE/failed User. Code: {Iresponse.status_code}\033[0m")
+            pp(f"[red]ERROR: Can't access ISE/failed User. Code: {Iresponse.status_code}")
             return("ERROR")
     except requests.exceptions.Timeout:
-        print(f"\033[1;31mTimeout error. Please check ISE connectivity\033[0m")
+        pp(f"[red]Timeout error. Please check ISE connectivity")
         return("ERROR")
 
 
@@ -288,6 +299,108 @@ def check_ise_auth_status(mac_address: str):
 ######       End of ISE functions      ######
 
 
+def get_device_ports(device_ip: str):
+    '''
+    This function will retrieve the list of interfaces on a given NAD/Switch,
+    the list of authentication sessions on that switch, and return a dictionary
+    with the following structure:
+
+    {
+    "stack_members": 3,
+    "stacks": {
+        "member1": {
+            "GigabitEthernet1/0/1": {
+                "status": "connected",
+                "vlan": 1234,
+                "description": "one port",
+                "auth_status": "Unauth",
+                "clients": [
+                    {"0cd0.f898.1420": "Unauth"}
+                ]
+            },
+            "GigabitEthernet1/0/2": {
+                "status": "connected",
+                "vlan": 1,
+                "description": "another port",
+                "auth_status": "Auth",
+                "clients": [
+                    {"603d.26da.8612": "Unauth"}
+                ]
+            },
+                "GigabitEthernet3/0/12": {
+                "status": "connected",
+                "vlan": 1234,
+                "description": "one port",
+                "auth_status": "Mixed",
+                "clients": [
+                    {"700b.4fc5.bfad": "Unauth"},
+                    {"0cd0.f842.0481": "Auth"}
+                ]
+
+            },
+    }}}  
+    '''
+    print('Verifying IP Address validity')
+    try:
+        ip = IPAddress(device_ip)
+        print(f'The IP address is {ip.format()}')
+    except:
+        pp('[red]Error, invalid device IP address')
+        return("ERROR: Invalid IP address")
+    testbed_input = testbed_template
+    testbed_input['devices']['device']['connections']['cli']['ip'] = ip.format()
+    testbed = load(testbed_input)
+    device = testbed.devices['device']
+    # Connect to the device
+    try:
+        device.connect(via='cli', learn_hostname=True)
+    except:
+        pp(f"[red]ERROR: Problem connecting to {device_ip}...")
+        return([f"ERROR: Problem connecting to {device_ip}..."])
+    # Get authentication sessions
+    try:
+        auth_sessions = device.parse(f'show {parse_command}')
+    except SchemaEmptyParserError:
+        pp(f"[red]ERROR: No access sessions on {device_ip}.")
+        auth_sessions = {"interfaces": {}}
+    except:
+        pp(f"[red]ERROR: Problem parsing information from {device_ip}.")
+        return([f"ERROR: Problem parsing information from {device_ip}."])
+    # Get interfaces' vlan assignments
+    try:
+        interfaces_status = device.parse('show interfaces status')
+    except:
+        pp(f"[red]ERROR: Problem parsing information from {device_ip}.")
+        return([f"ERROR: Problem parsing information from {device_ip}."])
+    #
+    # Create the formatted stack units' interface mapping
+    #
+    results = {"stack_members": 0, "stacks": {}}
+    for interface in interfaces_status['interfaces']:
+        # Ignore logical interfaces, e.g. Port-channels.
+        if "/" not in interface:
+            continue
+        member_number = re.findall(r'\d+', interface)[0]
+        if member_number not in results['stacks'].keys():
+            results['stacks'][member_number] = {}
+        results['stacks'][member_number][interface] = interfaces_status['interfaces'][interface]
+        interface_abbr = interface[:2] + re.findall(r'\d+(?:/\d+)+', interface)[0]
+        results['stacks'][member_number][interface]['interface_abbr']= interface_abbr
+        #
+        # Cross-reference with authentication sessions
+        #
+        if interface in auth_sessions['interfaces'].keys():
+            clients = []
+            for client in auth_sessions['interfaces'][interface]['client']:
+                clients.append({client: auth_sessions['interfaces'][interface]['client'][client]['status']})
+            results['stacks'][member_number][interface]['clients'] = clients
+        #
+        # Calculate the number of stack members
+        #
+        results['stack_members'] = len(results['stacks'].keys())
+    return(results)
+
+
 def get_device_auth_sessions(device_ip: str):
     '''
     This function will retrieve the active authentication sessions on a 
@@ -299,7 +412,7 @@ def get_device_auth_sessions(device_ip: str):
         ip = IPAddress(device_ip)
         print(f'The IP address is {ip.format()}')
     except:
-        print('\033[1;31mError, invalid device IP address\033[0m')
+        pp('[red]Error, invalid device IP address')
         return("ERROR: Invalid IP address")
     testbed_input = testbed_template
     testbed_input['devices']['device']['connections']['cli']['ip'] = ip.format()
@@ -309,25 +422,25 @@ def get_device_auth_sessions(device_ip: str):
     try:
         device.connect(via='cli', learn_hostname=True)
     except:
-        print(f"\033[1;31mERROR: Problem connecting to {device_ip}...\033[0m")
+        pp(f"[red]ERROR: Problem connecting to {device_ip}...")
         return([f"ERROR: Problem connecting to {device_ip}..."])
     # Get authentication sessions
     try:
         auth_sessions = device.parse(f'show {parse_command}')
     except SchemaEmptyParserError:
-        print(f"\033[1;31mERROR: No access sessions on {device_ip}.\033[0m")
+        pp(f"[red]ERROR: No access sessions on {device_ip}.")
         return([f"ERROR: No access sessions on {device_ip}."])
     except:
-        print(f"\033[1;31mERROR: Problem parsing information from {device_ip}.\033[0m")
+        pp(f"[red]ERROR: Problem parsing information from {device_ip}.")
         return([f"ERROR: Problem parsing information from {device_ip}."])
     # Get interfaces' vlan assignments
     try:
         interfaces_status = device.parse('show interfaces status')
     except SchemaEmptyParserError:
-        print(f"\033[1;31mERROR: No access sessions on {device_ip}.\033[0m")
+        pp(f"[red]ERROR: No access sessions on {device_ip}.")
         return([f"ERROR: No access sessions on {device_ip}."])
     except:
-        print(f"\033[1;31mERROR: Problem parsing information from {device_ip}.\033[0m")
+        pp(f"[red]ERROR: Problem parsing information from {device_ip}.")
         return([f"ERROR: Problem parsing information from {device_ip}."])
     relevant_sessions = []
     for interface in auth_sessions['interfaces']:
@@ -372,16 +485,151 @@ def format_mac(mac_address: str):
         mac.dialect = mac_cisco
         return(str(mac))
     except:
-        print("\033[1;31m: Invalid mac address\033[0m")
+        pp(f"[red]ERROR: Invalid mac address")
         return("ERROR")
+
+
+def get_port_auth_sessions(device_ip: str, interface: str):
+    '''
+    This function will retrieve the active authentication sessions on a 
+    given NAD/Switch (required: NAD's ip address), and returns a list of 
+    authentication sessions.
+
+    e.g.
+    [{
+        'Interface': 'GigabitEthernet1/0/7',
+        'EndpointMAC': '0050.5660.2da6',
+        'Status': 'Auth',
+        'Method': 'mab',
+        'Username': '00-50-56-60-2D-A6',
+        'IPv4': 'Unknown',
+        'NICVendor': 'VMware, Inc.',
+        'Vlan': '1',
+        'IPv4ACL': 'xACSACLx-IP-DENY_ALL_IPV4_TRAFFIC-57f6b0d3',
+        'IPv6ACL': 'xACSACLx-IPV6-DENY_ALL_IPV6_TRAFFIC-5f4ab0a2'
+    },
+    {
+        'Interface': 'GigabitEthernet1/0/7',
+        'EndpointMAC': '0050.5660.39c6',
+        'Status': 'Auth',
+        'Method': 'mab',
+        'Username': '00-50-56-60-39-C6',
+        'IPv4': '172.31.255.183',
+        'NICVendor': 'VMware, Inc.',
+        'Vlan': '1',
+        'IPv4ACL': 'xACSACLx-IP-DENY_ALL_IPV4_TRAFFIC-57f6b0d3',
+        'IPv6ACL': 'xACSACLx-IPV6-DENY_ALL_IPV6_TRAFFIC-5f4ab0a2'
+    }]
+    '''
+    print('Verifying IP Address validity')
+    try:
+        ip = IPAddress(device_ip)
+        print(f'The IP address is {ip.format()}')
+    except:
+        pp('[red]Error, invalid device IP address')
+        return("ERROR: Invalid IP address")
+    testbed_input = testbed_template
+    testbed_input['devices']['device']['connections']['cli']['ip'] = ip.format()
+    testbed = load(testbed_input)
+    device = testbed.devices['device']
+    # Connect to the device
+    try:
+        device.connect(via='cli', learn_hostname=True)
+    except:
+        pp(f"[red]ERROR: Problem connecting to {device_ip}...")
+        return([f"ERROR: Problem connecting to {device_ip}..."])
+    # Get authentication sessions
+    try:
+        auth_sessions = device.parse(f'show {parse_command}')
+    except SchemaEmptyParserError:
+        pp(f"[red]ERROR: No access sessions on {device_ip}.")
+        return([f"ERROR: No access sessions on {device_ip}."])
+    except:
+        pp(f"[red]ERROR: Problem parsing information from {device_ip}.")
+        return([f"ERROR: Problem parsing information from {device_ip}."])
+    # Get interfaces' vlan assignments
+    try:
+        interfaces_status = device.parse('show interfaces status')
+    except SchemaEmptyParserError:
+        pp(f"[red]ERROR: No access sessions on {device_ip}.")
+        return([f"ERROR: No access sessions on {device_ip}."])
+    except:
+        pp(f"[red]ERROR: Problem parsing information from {device_ip}.")
+        return([f"ERROR: Problem parsing information from {device_ip}."])
+    relevant_sessions = []
+    if interface not in auth_sessions['interfaces'].keys():
+        pp(f"[red]ERROR: Interface {interface} has no authentication sessions.")
+        return([f"ERROR: Interface {interface} has no authentication sessions."])
+    else:
+        auth_details = device.parse(f"show {parse_command} interface {interface} details")
+        for client in auth_sessions['interfaces'][interface]['client']:
+            if 'user_name' not in auth_details['interfaces'][interface]['mac_address'][client]:
+                auth_details['interfaces'][interface]['mac_address'][client]['user_name'] = ''
+            session = {'Interface': interface,
+                           'EndpointMAC': client,
+                           'Status': auth_sessions['interfaces'][interface]['client'][client]['status'],
+                           'Method': auth_sessions['interfaces'][interface]['client'][client]['method'],
+                           'Username': auth_details['interfaces'][interface]['mac_address'][client]['user_name'],
+                           'IPv4': auth_details['interfaces'][interface]['mac_address'][client]['ipv4_address'],
+                           'NICVendor': EUI(client).oui.registration()['org'],
+                           'Vlan': interfaces_status['interfaces'][interface]['vlan']
+                           }
+            try:
+                if "local_policies" in auth_details['interfaces'][interface]['mac_address'][client]:
+                    session['Vlan'] = auth_details['interfaces'][interface]['mac_address'][client]['local_policies']['vlan_group']['vlan']
+                if "server_policies" in auth_details['interfaces'][interface]['mac_address'][client]:
+                    server_policies = auth_details['interfaces'][interface]['mac_address'][client]['server_policies']
+                    for policy in server_policies:
+                        if server_policies[policy]['name'] == 'SGT Value':
+                            session['SGT'] = server_policies[policy]['policies']
+                        elif server_policies[policy]['name'] == 'ACS ACL IPV6':
+                            session['IPv6ACL'] = server_policies[policy]['policies']
+                        elif server_policies[policy]['name'] == 'ACS ACL':
+                            session['IPv4ACL'] = server_policies[policy]['policies']
+            except:
+                pass
+            relevant_sessions.append(session)
+    return(relevant_sessions)
+
+
+def clear_port_auth_sessions(device_ip: str, interface: str):
+    '''
+    This function will clear the authentication sessions of a specific
+    interface on a given switch.
+    '''
+    print('Verifying IP Address validity')
+    try:
+        ip = IPAddress(device_ip)
+        print(f'The IP address is {ip.format()}')
+    except:
+        pp('[red]Error, invalid device IP address')
+        return("ERROR: Invalid IP address")
+    testbed_input = testbed_template
+    testbed_input['devices']['device']['connections']['cli']['ip'] = ip.format()
+    testbed = load(testbed_input)
+    device = testbed.devices['device']
+    # Connect to the device
+    try:
+        device.connect(via='cli', learn_hostname=True)
+    except:
+        pp(f"[red]ERROR: Problem connecting to {device_ip}...")
+        return([f"ERROR: Problem connecting to {device_ip}..."])
+    # Clear authentication sessions
+    try:
+        device.execute(f'clear authentication session interface {interface}')
+    except:
+        pp(f"[red]ERROR: Problem parsing information from {device_ip}.")
+        return([f"ERROR: Problem parsing information from {device_ip}."])
+    pp(f"Cleared authentication sessions on {interface} on {device_ip}.")
+    return(f"Cleared authentication sessions on {interface} on {device_ip}.")
 
 
 def read_voucher_list():
     '''
     Voucher file format:
     [
-        {"mac": "00:11:22:33:44:55", "duration": 1617292081, "group": "AAA-Vouchers", "user": "Oren"},
-        {"mac": "11:22:33:44:55:66", "duration": 1617293054, "group": "BBB-Vouchers", "user": "Ramona"}
+        {"type": "host", "mac": "00:11:22:33:44:55", "duration": 1617292081, "group": "AAA-Vouchers", "user": "Oren"},
+        {"type": "host", "mac": "11:22:33:44:55:66", "duration": 1617293054, "group": "BBB-Vouchers", "user": "Ramona"}
     ]
     '''
     try:
@@ -401,7 +649,7 @@ def read_voucher_list():
     return(voucher_list)
 
 
-def add_voucher(mac_address: str, duration: int, voucher_group: str, user: str):
+def add_host_voucher(mac_address: str, duration: int, voucher_group: str, user: str):
     '''
     This function will receive an endpoint MAC address, add it to ISE's
     voucher endpoint group, and add an entry to the voucher list file 
@@ -412,21 +660,22 @@ def add_voucher(mac_address: str, duration: int, voucher_group: str, user: str):
         try:
             # Update the voucher file
             voucher_list = read_voucher_list()
-            if any(mac in voucher['mac'] for voucher in voucher_list):
-                print(
-                    f"\033[1;31mERROR: MAC {mac} already has a voucher. Kindly revoke it first.\033[0m")
-                return(f"ERROR: MAC {mac} already has a voucher. Kindly revoke it first.")
-            else:
-                print(
-                    f"Adding MAC {mac} with a duration of {duration} hours to the voucher group {voucher_group}, user: {user}")
-                voucher = {"mac": mac, "duration": int(
-                    time()) + duration*60*60, "group": voucher_group, 
-                    "user": user}
-                voucher_list.append(voucher)
-                with open('./data/voucher.json', 'w') as f:
-                    json.dump(voucher_list, f)
+            # Checking if the voucher already exists
+            for voucher in voucher_list:
+                if voucher['type'] == "host" and voucher['mac'] == mac:
+                    pp(f"[red]ERROR: MAC {mac} already has a voucher. Kindly revoke it first.")
+                    return(f"ERROR: MAC {mac} already has a voucher. Kindly revoke it first.")
+            # Voucher not found - create a new one
+            print(
+                f"Adding MAC {mac} with a duration of {duration} hours to the voucher group {voucher_group}, user: {user}")
+            voucher = {"type": "host", "mac": mac, 
+                "duration": int(time()) + duration*60*60, "group": voucher_group, 
+                "user": user}
+            voucher_list.append(voucher)
+            with open('./data/voucher.json', 'w') as f:
+                json.dump(voucher_list, f)
         except:
-            print("\033[1;31mERROR: Wasn't able to update the voucher file\033[0m")
+            pp(f"[red]ERROR: Wasn't able to update the voucher file")
             return("ERROR: Wasn't able to update the voucher file")
         try:
             # Update ISE
@@ -434,14 +683,92 @@ def add_voucher(mac_address: str, duration: int, voucher_group: str, user: str):
             send_syslog(f"Voucher created! MAC: {mac}, duration: {duration} hours, voucher group: {voucher_group}, user: {user}")
             return("Done")
         except:
-            print(f"\033[1;31mERROR: Wasn't able to add {mac} to ISE's voucher list\033[0m")
+            pp(f"[red]ERROR: Wasn't able to add {mac} to ISE's voucher list")
             return(f"ERROR: Wasn't able to add {mac} to ISE's voucher list")
     else:
-        print(f"\033[1;31mERROR: Invalid MAC address: {mac_address}\033[0m")
-        return("ERROR: Invalid MAC address")
+        pp(f"[red]ERROR: Invalid MAC address: {mac_address}")
+        return(f"ERROR: Invalid MAC address: {mac_address}")
 
 
-def revoke_voucher(mac_address: str, user="system"):
+def add_port_voucher(device_ip: str, interface: str, duration: int, user: str):
+    '''
+    This function will receive a switch's IP address and interface name, 
+    removes its dot1x command from the switch (storing it in the voucher 
+    for restoration later).
+    '''
+    try:
+        voucher_list = read_voucher_list()
+        # Checking if the voucher already exists
+        for voucher in voucher_list:
+            if voucher['type'] == "port":
+                if voucher['switch_ip'] == device_ip and voucher['interface'] == interface:
+                    pp(f"[red]ERROR: {interface} on {device_ip} already has a voucher. Kindly revoke it first.")
+                    return(f"ERROR: {interface} on {device_ip} already has a voucher. Kindly revoke it first.")
+    except:
+        pp(f"[red]ERROR: Wasn't able to read the voucher file")
+        return("ERROR: Wasn't able to read the voucher file")
+    #
+    # Voucher not found - update switch settings
+    #
+    print('Verifying IP Address validity')
+    try:
+        ip = IPAddress(device_ip)
+        print(f'The IP address is {ip.format()}')
+    except:
+        pp('[red]Error, invalid device IP address')
+        return("ERROR: Invalid IP address")
+    testbed_input = testbed_template
+    testbed_input['devices']['device']['connections']['cli']['ip'] = ip.format()
+    testbed = load(testbed_input)
+    device = testbed.devices['device']
+    #
+    # Connect to the device
+    #
+    try:
+        device.connect(via='cli', learn_hostname=True)
+    except:
+        pp(f"[red]ERROR: Problem connecting to {device_ip}...")
+        return([f"ERROR: Problem connecting to {device_ip}..."])
+    # Get authentication sessions
+    try:
+        interface_config = device.parse(f'show run interface {interface}')
+    except:
+        pp(f"[red]ERROR: Problem parsing information from {device_ip}.")
+        return([f"ERROR: Problem parsing information from {device_ip}."])
+    # Check for dot1x commands
+    if "source_template" in interface_config['interfaces'][interface]:
+        command = f"source template {interface_config['interfaces'][interface]['source_template']}"
+    elif "dot1x_pae_authenticator" in interface_config['interfaces'][interface]:
+        command = f"dot1x pae authenticator"
+    else:
+        pp(f"[red]ERROR: No dot1x command found on {device_ip}.")
+        return(f"ERROR: No dot1x command found on {device_ip}.")
+    # Remove the dot1x command from the interface config
+    try:
+        device.configure(f"interface {interface} \n no {command}")
+    except:
+        pp(f"[red]ERROR: Problem removing the command {command} from {interface} on {device_ip}.")
+        return([f"ERROR: Problem removing dot1x configuration from {device_ip}."])
+    #
+    # Update the voucher file
+    #
+    try:
+        print(f"Adding {interface} on switch {device_ip} with a duration of {duration} hours, user: {user}")
+        voucher = {"type": "port", "switch_ip": device_ip, 
+            "duration": int(time()) + duration*60*60,
+            "interface": interface,
+            "command": command,
+            "user": user}
+        voucher_list.append(voucher)
+        with open('./data/voucher.json', 'w') as f:
+            json.dump(voucher_list, f)
+    except:
+        pp(f"[red]ERROR: Wasn't able to update the voucher file - reverting port configuration")
+        device.configure(f"interface {interface} \n {command}")
+        return("ERROR: Wasn't able to update the voucher file - reverting port configuration")
+
+
+def revoke_host_voucher(mac_address: str, user: str):
     '''
     This function will receive an endpoint MAC address, remove it from 
     ISE's voucher endpoint group, and from the voucher list file.
@@ -450,19 +777,22 @@ def revoke_voucher(mac_address: str, user="system"):
     try:
         # Update voucher file
         voucher_list = read_voucher_list()
-        if any(mac in voucher['mac'] for voucher in voucher_list):
-            for voucher in voucher_list:
-                if voucher['mac'] == mac:
-                    voucher_group = voucher['group']
-                    print(
-                        f"Deleting MAC {mac} (group {voucher_group}) from the voucher list")
-                    voucher_list.remove(voucher)
-                    with open('./data/voucher.json', 'w') as f:
-                        json.dump(voucher_list, f)
-        else:
-            print(f"\033[1;31mERROR: MAC address {mac} not found on the voucher list\033[0m")
+        isFound = False
+        # Checking if the voucher already exists
+        for voucher in voucher_list:
+            if voucher['type'] == "host" and voucher['mac'] == mac:
+                isFound = True
+                voucher_group = voucher['group']
+                print(
+                    f"Deleting MAC {mac} (group {voucher_group}) from the voucher list")
+                voucher_list.remove(voucher)
+                with open('./data/voucher.json', 'w') as f:
+                    json.dump(voucher_list, f)
+                break
+        if not isFound:
+            pp(f"[red]ERROR: MAC address {mac} not found on the voucher list")
     except:
-        print("\033[1;31mERROR: Wasn't able to update the voucher file\033[0m")
+        pp(f"[red]ERROR: Wasn't able to update the voucher file")
         return("ERROR: Wasn't able to update the voucher file")
     try:
         # Update ISE
@@ -471,8 +801,59 @@ def revoke_voucher(mac_address: str, user="system"):
         send_syslog(f"Voucher revoked! MAC: {mac}, user: {user}")
         return("Done")
     except:
-        print(f"\033[1;31mERROR: Wasn't able to remove {mac} from ISE's voucher list\033[0m")
+        pp(f"[red]ERROR: Wasn't able to remove {mac} from ISE's voucher list")
         return(f"ERROR: Wasn't able to remove {mac} from ISE's voucher list")
+
+
+def revoke_port_voucher(device_ip: str, interface: str, command: str, user: str):
+    '''
+    This function will receive an endpoint MAC address, remove it from 
+    ISE's voucher endpoint group, and from the voucher list file.
+    '''
+    print('Verifying IP Address validity')
+    try:
+        ip = IPAddress(device_ip)
+        print(f'The IP address is {ip.format()}')
+    except:
+        pp('[red]Error, invalid device IP address')
+        return("ERROR: Invalid IP address")
+    testbed_input = testbed_template
+    testbed_input['devices']['device']['connections']['cli']['ip'] = ip.format()
+    testbed = load(testbed_input)
+    device = testbed.devices['device']
+    # Connect to the device
+    try:
+        device.connect(via='cli', learn_hostname=True)
+    except:
+        pp(f"[red]ERROR: Problem connecting to {device_ip}...")
+        return([f"ERROR: Problem connecting to {device_ip}..."])
+    # Restore the dot1x interface configuration
+    try:
+        device.configure(f"interface {interface} \n {command}")
+    except:
+        pp(f"[red]ERROR: Problem restoring the command {command} from {interface} on {device_ip}.")
+        return([f"ERROR: Problem restoring dot1x configuration from {device_ip}."])
+    try:
+        # Update voucher file
+        voucher_list = read_voucher_list()
+        isFound = False
+        # Checking if the voucher already exists
+        for voucher in voucher_list:
+            if voucher['type'] == "port":
+                if voucher['switch_ip'] == device_ip and voucher['interface'] == interface:
+                    print(f"Deleting {interface} on switch {device_ip}, user: {user}")
+                    voucher_list.remove(voucher)
+                    isFound = True
+                    with open('./data/voucher.json', 'w') as f:
+                        json.dump(voucher_list, f)
+                    break
+        if not isFound:
+            pp(f"[red]ERROR: Port voucher not found on the voucher list")
+    except:
+        pp(f"[red]ERROR: Wasn't able to update the voucher file")
+        return("ERROR: Wasn't able to update the voucher file")
+    send_syslog(f"Voucher revoked! Switch: {device_ip}, interface: {interface}, user: {user}")
+    return("Done")
 
 
 def voucher_cleanup():
@@ -484,9 +865,14 @@ def voucher_cleanup():
     voucher_list = read_voucher_list()
     for voucher in voucher_list:
         if voucher['duration'] < int(time()):
-            print(
-                f"\033[0;35mRemoving expired voucher of {voucher['mac']} from voucher group {voucher['group']}.")
-            revoke_voucher(voucher['mac'], "Timer")
+            if voucher['type'] == "host":
+                print(
+                    f"\033[0;35mRemoving expired voucher of {voucher['mac']} from voucher group {voucher['group']}.")
+                revoke_host_voucher(voucher['mac'], "Timer")
+            if voucher['type'] == "port":
+                print(
+                    f"\033[0;35mRemoving expired voucher of interface {voucher['interface']} on {voucher['switch_ip']}.")
+                revoke_port_voucher(voucher['switch_ip'], voucher['interface'], voucher['command'], "Timer")
             print("Clean-up done.\033[0m")
 
 

@@ -1,4 +1,17 @@
 # Change log
+##### 05-May-2022
+* Added a page with a graphical representation of a switch and its port statuses.
+* For each port, a detail page with the session information for the specific port was added.
+* Ability to clear the authentication sessions for specific interfaces - by right clicking a port in the switch view, and choosing "Clear port".
+* Ability to create a "port voucher", temporarily disabling dot1x on that interface for 24 hours.
+
+##### 23-February-2022
+* Documentation updates/clarifications, thanks to Roddie.
+* Sample Docker-Compose file, thanks to Roddie.
+
+##### 5-July-2021
+* NAD List fetch converted to async for faster response.
+
 ##### 12-May-2021
 * Added a welcome page, to avoid loading delay for networks with many NADs.
 * Added jquery as a local file.

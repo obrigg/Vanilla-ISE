@@ -26,13 +26,13 @@
                 <div class="form-group form-group--inline">
                     <div class="form-group__text">
                         <input type="text" placeholder="MAC Address" value="{{mac_address}}"
-                            name="mac_address" required pattern="^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$">
+                            name="mac_address" pattern="^([0-9A-Fa-f]{2}[:.-]?){5}[0-9A-Fa-f]{2}$" required>
                     </div>
                     <button class="btn btn--primary" type="submit" onclick="showLoadingText(this)"
                         onload="showOriginalText(this, 'Query Endpoint')">Query Endpoint</button>
                 </div>
 
-                {% if post_request_done%}
+                {% if endpoint_list%}
 
                 <ul class="list-group list-group-flush">
                     <li class="list-group-item"><span class="bold">Status:</span> {{endpoint_list.Status}}</li>
@@ -48,8 +48,15 @@
 
                 {% else %}
 
-                    <div class="no_query">Please enter a MAC address and press the button to execute a endpoint query.</div>
-                
+                    {% if no_events%}
+                    
+                        <div class="no_query">No authentication events for MAC Address {{mac_address}} during the last 24.0 hours.</div>
+
+                    {% else %}
+
+                        <div class="no_query">Please enter a MAC address and press the button to execute a endpoint query.</div>
+                    
+                    {% endif %}
                 {% endif %}
 
             </form>

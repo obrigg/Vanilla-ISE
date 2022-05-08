@@ -33,7 +33,7 @@
                         Device</button>
                 </div>
 
-                {% if post_request_done %}
+                {% if relevant_sessions %}
 
                 <div class="responsive-table">
                     <table class="table table--lined table--selectable table">
@@ -59,7 +59,9 @@
                                         <span>{{session.Interface}}</span>
                                     </td>
                                     <td>
-                                        <span>{{session.EndpointMAC}}</span>
+                                        <a class="listitem" href="endpointQuery?mac_address={{session.EndpointMAC}}">
+                                            <span>{{session.EndpointMAC}}</span>
+                                        </a>
                                     </td>
                                     <td>
                                         <span>{{session.Status}}</span>
@@ -94,7 +96,7 @@
 
                 {% else %}
                     <div class="no_query">
-                        Please enter a IP address and press the button to execute a device query.
+                        Please enter an IP address and press the button to execute a device query.
                     </div>
                 {% endif %}
 
