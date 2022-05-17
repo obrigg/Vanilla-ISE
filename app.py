@@ -1,4 +1,4 @@
-__version__ = '22.05.04.1'
+__version__ = '22.05.17.01'
 __author__ = 'Oren Brigg & Ramona Renner'
 __author_email__ = 'obrigg@cisco.com / ramrenne@cisco.com'
 __license__ = "Cisco Sample Code License, Version 1.1 - https://developer.cisco.com/site/license/cisco-sample-code-license/"
@@ -21,6 +21,7 @@ or implied.
 from flask import Flask, render_template, request, url_for, redirect, session
 from requests.auth import HTTPBasicAuth
 import backend
+import requests
 from time import ctime, sleep, time
 from threading import Thread
 
@@ -60,6 +61,12 @@ def voucher_cleanup_loop():
     while True:
         backend.voucher_cleanup()
         sleep(10*60)
+
+
+def call_home():
+    '''This function will let us know Vanilla ISE is actually being used. No data is collected besides a heartbeat.
+    You may comment this out if needed. '''
+    requests.get("https://obrigg-app-usage.herokuapp.com/vanilla-ise")
 
 
 def normalize_mac_format(mac_address):
@@ -367,6 +374,8 @@ def endpointQuery():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    t2 = Thread(target=call_home)
+    t2.start()
     """Login Form"""
     if request.method == 'GET':
         return render_template('login.html')
