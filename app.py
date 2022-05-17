@@ -374,8 +374,10 @@ def endpointQuery():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    t2 = Thread(target=call_home)
-    t2.start()
+    try:
+        call_home()
+    except:
+        pass
     """Login Form"""
     if request.method == 'GET':
         return render_template('login.html')
