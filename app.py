@@ -374,10 +374,6 @@ def endpointQuery():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    try:
-        call_home()
-    except:
-        pass
     """Login Form"""
     if request.method == 'GET':
         return render_template('login.html')
@@ -390,6 +386,13 @@ def login():
             session['logged_in'] = int(time()) + backend.timeout
             session['username'] = name
             print(f"Logged in until: {ctime(session['logged_in'])}")
+            try:
+                # Letting us know Vanilla ISE is actually being used. No data is collected besides a heartbeat. 
+                # You may comment this out if needed 
+                call_home()
+                pass
+            except:
+                pass
             return redirect(url_for('index'))
         else:
             print("Failed login")
@@ -401,4 +404,4 @@ if __name__ == "__main__":
     t1 = Thread(target=voucher_cleanup_loop)
     t1.start()
     sleep(1)
-    app.run(host='0.0.0.0', debug=False, threaded=True)
+    app.run(host='0.0.0.0', debug=False, threaded=True, port=5050)
