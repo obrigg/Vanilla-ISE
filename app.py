@@ -404,4 +404,4 @@ if __name__ == "__main__":
     t1 = Thread(target=voucher_cleanup_loop)
     t1.start()
     sleep(1)
-    app.run(host='0.0.0.0', debug=False, threaded=True, port=5050)
+    app.run(host='0.0.0.0', debug=False, threaded=True)
