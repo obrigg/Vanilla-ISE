@@ -63,12 +63,6 @@ def voucher_cleanup_loop():
         sleep(10*60)
 
 
-def call_home():
-    '''This function will let us know Vanilla ISE is actually being used. No data is collected besides a heartbeat.
-    You may comment this out if needed. '''
-    requests.get("https://obrigg-app-usage.herokuapp.com/vanilla-ise")
-
-
 def normalize_mac_format(mac_address):
     '''
     This function normalizes mac addresses of different formats 
@@ -386,13 +380,6 @@ def login():
             session['logged_in'] = int(time()) + backend.timeout
             session['username'] = name
             print(f"Logged in until: {ctime(session['logged_in'])}")
-            try:
-                # Letting us know Vanilla ISE is actually being used. No data is collected besides a heartbeat. 
-                # You may comment this out if needed 
-                call_home()
-                pass
-            except:
-                pass
             return redirect(url_for('index'))
         else:
             print("Failed login")
