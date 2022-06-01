@@ -51,7 +51,8 @@ testbed_template = {'devices': {
                     'ip': '',
                     'port': 22,
                     'protocol': 'ssh',
-                    'ssh_options': '-o KexAlgorithms=+diffie-hellman-group14-sha1'
+                    'ssh_options': '-o KexAlgorithms=+diffie-hellman-group14-sha1',
+                    'settings': {'GRACEFUL_DISCONNECT_WAIT_SEC': 0.5, 'POST_DISCONNECT_WAIT_SEC': 0.5}
                 }
         },
         'credentials': {
@@ -365,12 +366,14 @@ def get_device_ports(device_ip: str):
         auth_sessions = {"interfaces": {}}
     except:
         pp(f"[red]ERROR: Problem parsing information from {device_ip}.")
+        device.disconnect()
         return([f"ERROR: Problem parsing information from {device_ip}."])
     # Get interfaces' vlan assignments
     try:
         interfaces_status = device.parse('show interfaces status')
     except:
         pp(f"[red]ERROR: Problem parsing information from {device_ip}.")
+        device.disconnect()
         return([f"ERROR: Problem parsing information from {device_ip}."])
     #
     # Create the formatted stack units' interface mapping
@@ -398,6 +401,7 @@ def get_device_ports(device_ip: str):
         # Calculate the number of stack members
         #
         results['stack_members'] = len(results['stacks'].keys())
+    device.disconnect()
     return(results)
 
 
@@ -472,6 +476,7 @@ def get_device_auth_sessions(device_ip: str):
                 except:
                     pass
                 relevant_sessions.append(session)
+    device.disconnect()
     return(relevant_sessions)
 
 
@@ -543,22 +548,27 @@ def get_port_auth_sessions(device_ip: str, interface: str):
         auth_sessions = device.parse(f'show {parse_command}')
     except SchemaEmptyParserError:
         pp(f"[red]ERROR: No access sessions on {device_ip}.")
+        device.disconnect()
         return([f"ERROR: No access sessions on {device_ip}."])
     except:
         pp(f"[red]ERROR: Problem parsing information from {device_ip}.")
+        device.disconnect()
         return([f"ERROR: Problem parsing information from {device_ip}."])
     # Get interfaces' vlan assignments
     try:
         interfaces_status = device.parse('show interfaces status')
     except SchemaEmptyParserError:
         pp(f"[red]ERROR: No access sessions on {device_ip}.")
+        device.disconnect()
         return([f"ERROR: No access sessions on {device_ip}."])
     except:
         pp(f"[red]ERROR: Problem parsing information from {device_ip}.")
+        device.disconnect()
         return([f"ERROR: Problem parsing information from {device_ip}."])
     relevant_sessions = []
     if interface not in auth_sessions['interfaces'].keys():
         pp(f"[red]ERROR: Interface {interface} has no authentication sessions.")
+        device.disconnect()
         return([f"ERROR: Interface {interface} has no authentication sessions."])
     else:
         auth_details = device.parse(f"show {parse_command} interface {interface} details")
@@ -589,6 +599,7 @@ def get_port_auth_sessions(device_ip: str, interface: str):
             except:
                 pass
             relevant_sessions.append(session)
+    device.disconnect()
     return(relevant_sessions)
 
 
@@ -619,8 +630,10 @@ def clear_port_auth_sessions(device_ip: str, interface: str):
         device.execute(f'clear authentication session interface {interface}')
     except:
         pp(f"[red]ERROR: Problem parsing information from {device_ip}.")
+        device.disconnect()
         return([f"ERROR: Problem parsing information from {device_ip}."])
     pp(f"Cleared authentication sessions on {interface} on {device_ip}.")
+    device.disconnect()
     return(f"Cleared authentication sessions on {interface} on {device_ip}.")
 
 
@@ -734,6 +747,7 @@ def add_port_voucher(device_ip: str, interface: str, duration: int, user: str):
         interface_config = device.parse(f'show run interface {interface}')
     except:
         pp(f"[red]ERROR: Problem parsing information from {device_ip}.")
+        device.disconnect()
         return([f"ERROR: Problem parsing information from {device_ip}."])
     # Check for dot1x commands
     if "source_template" in interface_config['interfaces'][interface]:
@@ -742,12 +756,14 @@ def add_port_voucher(device_ip: str, interface: str, duration: int, user: str):
         command = f"dot1x pae authenticator"
     else:
         pp(f"[red]ERROR: No dot1x command found on {device_ip}.")
+        device.disconnect()
         return(f"ERROR: No dot1x command found on {device_ip}.")
     # Remove the dot1x command from the interface config
     try:
         device.configure(f"interface {interface} \n no {command}")
     except:
         pp(f"[red]ERROR: Problem removing the command {command} from {interface} on {device_ip}.")
+        device.disconnect()
         return([f"ERROR: Problem removing dot1x configuration from {device_ip}."])
     #
     # Update the voucher file
@@ -765,6 +781,7 @@ def add_port_voucher(device_ip: str, interface: str, duration: int, user: str):
     except:
         pp(f"[red]ERROR: Wasn't able to update the voucher file - reverting port configuration")
         device.configure(f"interface {interface} \n {command}")
+        device.disconnect()
         return("ERROR: Wasn't able to update the voucher file - reverting port configuration")
 
 
@@ -832,6 +849,7 @@ def revoke_port_voucher(device_ip: str, interface: str, command: str, user: str)
         device.configure(f"interface {interface} \n {command}")
     except:
         pp(f"[red]ERROR: Problem restoring the command {command} from {interface} on {device_ip}.")
+        device.disconnect()
         return([f"ERROR: Problem restoring dot1x configuration from {device_ip}."])
     try:
         # Update voucher file
@@ -853,6 +871,7 @@ def revoke_port_voucher(device_ip: str, interface: str, command: str, user: str)
         pp(f"[red]ERROR: Wasn't able to update the voucher file")
         return("ERROR: Wasn't able to update the voucher file")
     send_syslog(f"Voucher revoked! Switch: {device_ip}, interface: {interface}, user: {user}")
+    device.disconnect()
     return("Done")
 
 
