@@ -1,4 +1,4 @@
-__version__ = "22.05.05.01"
+__version__ = "22.06.13.01"
 __author__ = "Oren Brigg & Ramona Renner"
 __author_email__ = "obrigg@cisco.com / ramrenne@cisco.com"
 __license__ = "Cisco Sample Code License, Version 1.1 - https://developer.cisco.com/site/license/cisco-sample-code-license/"
@@ -515,9 +515,13 @@ def get_device_auth_sessions(device_ip: str):
                     "Method": auth_sessions["interfaces"][interface]["client"][client]["method"],
                     "Username": auth_details["interfaces"][interface]["mac_address"][client]["user_name"],
                     "IPv4": auth_details["interfaces"][interface]["mac_address"][client]["ipv4_address"],
-                    "NICVendor": EUI(client).oui.registration()["org"],
+                    "NICVendor": "Unknown",
                     "Vlan": interfaces_status["interfaces"][interface]["vlan"],
                 }
+                try:
+                    session["NICVendor"] = EUI(client).oui.registration()["org"]
+                except:
+                    pass
                 try:
                     if (
                         "local_policies"
@@ -651,9 +655,13 @@ def get_port_auth_sessions(device_ip: str, interface: str):
                 "Method": auth_sessions["interfaces"][interface]["client"][client]["method"],
                 "Username": auth_details["interfaces"][interface]["mac_address"][client]["user_name"],
                 "IPv4": auth_details["interfaces"][interface]["mac_address"][client]["ipv4_address"],
-                "NICVendor": EUI(client).oui.registration()["org"],
+                "NICVendor": "Unknown",
                 "Vlan": interfaces_status["interfaces"][interface]["vlan"],
             }
+            try:
+                session["NICVendor"] = EUI(client).oui.registration()["org"]
+            except:
+                pass
             try:
                 if (
                     "local_policies"
