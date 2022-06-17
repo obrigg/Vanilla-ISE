@@ -1,4 +1,4 @@
-__version__ = "22.05.17.01"
+__version__ = "22.06.17.01"
 __author__ = "Oren Brigg & Ramona Renner"
 __author_email__ = "obrigg@cisco.com / ramrenne@cisco.com"
 __license__ = "Cisco Sample Code License, Version 1.1 - https://developer.cisco.com/site/license/cisco-sample-code-license/"
@@ -462,6 +462,8 @@ def endpointQuery():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    # Reset an existing sessio
+    session["logged_in"] = 0
     """Login Form"""
     if request.method == "GET":
         return render_template("login.html")

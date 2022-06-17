@@ -1,4 +1,11 @@
 # Change log
+
+##### June-2022
+* Added a graceful disconnect from the switches, in order to avoid utilizing all VTY sessions.
+* Black'd, for PEP8.
+* Gracefully handling unknown OUI.
+* Added a "logout" button.
+
 ##### 05-May-2022
 * Added a page with a graphical representation of a switch and its port statuses.
 * For each port, a detail page with the session information for the specific port was added.

@@ -43,6 +43,10 @@
                         </div>
                         <!--Link area (right)-->
                         <div class="header-panel header-panel--right"> 
+                            <!--CUSTOMIZE: Add or remove Header links-->
+                            <!--PASS INFO: Header links are hidden, if hiddenLinks=false variable is passed to child template-->
+                            <a class="header-item {% if hiddenLinks == True %}hidden-5xl-down{% endif %}" href="/login">Logout</a>
+                            <!--CUSTOMIZE END-->
                         </div>  
                     </div>
                 </div>
