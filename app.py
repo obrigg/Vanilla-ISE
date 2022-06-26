@@ -1,4 +1,4 @@
-__version__ = "22.06.17.01"
+__version__ = "22.06.26.01"
 __author__ = "Oren Brigg & Ramona Renner"
 __author_email__ = "obrigg@cisco.com / ramrenne@cisco.com"
 __license__ = "Cisco Sample Code License, Version 1.1 - https://developer.cisco.com/site/license/cisco-sample-code-license/"
@@ -176,6 +176,7 @@ def deviceQuery():
 
 
 app.route("/switchView?ip_address=<ip_address>&success=<success>")
+app.route("/switchView?nad_id=<nad_id>&success=<success>")
 
 
 @app.route("/switchView", methods=["GET", "POST"])
@@ -191,7 +192,13 @@ def switchView():
         try:
             if request.method == "GET":
 
-                ip_address = request.args.get("ip_address")
+                nad_id = request.args.get("nad_id")
+                if nad_id == None:
+                    ip_address = request.args.get("ip_address")
+                else:
+                    ip_address = backend.get_nad_ip(nad_id)
+                
+                print(f"IP: {ip_address}")
 
             elif request.method == "POST":
 
@@ -487,4 +494,4 @@ if __name__ == "__main__":
     t1 = Thread(target=voucher_cleanup_loop)
     t1.start()
     sleep(1)
-    app.run(host="0.0.0.0", debug=False, threaded=True, port=5000)
+    app.run(host="0.0.0.0", debug=False, threaded=True)

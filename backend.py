@@ -80,49 +80,6 @@ if syslog_server != "":
 
 ######   End of envrionment setup   ######
 
-######       Async functions        ######
-
-
-async def fetch(NAD, session):
-    nad_url = base_url + "networkdevice/" + NAD["id"]
-    try:
-        async with session.get(
-            nad_url, headers=headers, auth=async_auth, verify_ssl=False
-        ) as response:
-            json_resp = await response.json()
-            NAD_list_details[json_resp["NetworkDevice"]["name"]] = json_resp[
-                "NetworkDevice"
-            ]["NetworkDeviceIPList"][0]["ipaddress"]
-            return await response.json()
-    except:
-        print("Error")
-        return None
-
-
-async def bound_fetch(sem, NAD, session):
-    # Getter function with semaphore.
-    async with sem:
-        await fetch(NAD, session)
-
-
-async def get_NAD_details():
-    tasks = []
-    # create instance of Semaphore
-    sem = asyncio.Semaphore(batch)
-
-    # Create client session that will ensure we dont open new connection
-    # per each request.
-    async with ClientSession() as session:
-        for NAD in complete_NAD_list:
-            # pass Semaphore and session to every GET request
-            task = asyncio.ensure_future(bound_fetch(sem, NAD, session))
-            tasks.append(task)
-
-        responses = asyncio.gather(*tasks)
-        await responses
-
-
-######    End of Async functions    ######
 
 ######         ISE functions        ######
 
@@ -155,13 +112,9 @@ def get_all_NADs():
                 url = NAD_list["SearchResult"]["nextPage"]["href"]
             else:
                 isDone = True
-        print(f"Found {len(complete_NAD_list)} NADs. Fetching details...")
-
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        # loop = asyncio.get_event_loop()
-        future = asyncio.ensure_future(get_NAD_details())
-        loop.run_until_complete(future)
+        print(f"Found {len(complete_NAD_list)} NADs.")
+        for NAD in complete_NAD_list:
+            NAD_list_details[NAD['name']] = NAD['id']
         # Sorting the list
         pp(NAD_list_details)
         sorted_NAD_list = OrderedDict(
@@ -171,6 +124,20 @@ def get_all_NADs():
     except:
         pp("[red]An error has occured trying to fetch the NAD list")
         return {"ERROR", "ERROR"}
+
+
+def get_nad_ip(nad_id: str) -> str:
+    """
+    This function will return the IP address of a given NAD ID.
+    """
+    nad_url = base_url + "networkdevice/" + nad_id
+    response = requests.get(url=nad_url, auth=auth, headers=headers, verify=False)
+    if response.status_code == 200:
+        nad_ip = response.json()["NetworkDevice"]["NetworkDeviceIPList"][0]["ipaddress"]
+        return nad_ip
+    else:
+        pp(f"[red]ERROR: Couldn't fetch NAD {nad_id}'s IP address")
+        return "ERROR"
 
 
 def get_ise_group_id(group_name: str):
