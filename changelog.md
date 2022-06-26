@@ -1,6 +1,7 @@
 # Change log
 
 ##### June-2022
+* Fetching NAD IDs instead of IPs for faster retrieval.
 * Added a graceful disconnect from the switches, in order to avoid utilizing all VTY sessions.
 * Black'd, for PEP8.
 * Gracefully handling unknown OUI.

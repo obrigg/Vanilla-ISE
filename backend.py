@@ -114,7 +114,7 @@ def get_all_NADs():
                 isDone = True
         print(f"Found {len(complete_NAD_list)} NADs.")
         for NAD in complete_NAD_list:
-            NAD_list_details[NAD['name']] = NAD['id']
+            NAD_list_details[NAD["name"]] = NAD["id"]
         # Sorting the list
         pp(NAD_list_details)
         sorted_NAD_list = OrderedDict(
@@ -235,7 +235,9 @@ def initialize_ise(name, passw):
             print(f"User {name} has suffecient permissions to login to ISE")
             return "Done"
         else:
-            pp(f"[red]ERROR: Can't access ISE/failed User. Code: {Iresponse.status_code}")
+            pp(
+                f"[red]ERROR: Can't access ISE/failed User. Code: {Iresponse.status_code}"
+            )
             return "ERROR"
     except requests.exceptions.Timeout:
         pp(f"[red]Timeout error. Please check ISE connectivity")
@@ -419,7 +421,8 @@ def get_device_ports(device_ip: str):
             clients = []
             for client in auth_sessions["interfaces"][interface]["client"]:
                 clients.append(
-                    {client: auth_sessions["interfaces"][interface]["client"][client]["status"]})
+                    {client: auth_sessions["interfaces"][interface]["client"][client]["status"]}
+                )
             results["stacks"][member_number][interface]["clients"] = clients
         #
         # Calculate the number of stack members
@@ -473,7 +476,7 @@ def get_device_auth_sessions(device_ip: str):
     relevant_sessions = []
     for interface in auth_sessions["interfaces"]:
         for client in auth_sessions["interfaces"][interface]["client"]:
-            if (auth_sessions["interfaces"][interface]["client"][client]["domain"] != "UNKNOWN"):
+            if (auth_sessions["interfaces"][interface]["client"][client]["domain"]!= "UNKNOWN"):
                 auth_details = device.parse(f"show {parse_command} interface {interface} details")
                 session = {
                     "Interface": interface,
@@ -613,7 +616,10 @@ def get_port_auth_sessions(device_ip: str, interface: str):
             f"show {parse_command} interface {interface} details"
         )
         for client in auth_sessions["interfaces"][interface]["client"]:
-            if ("user_name" not in auth_details["interfaces"][interface]["mac_address"][client]):
+            if (
+                "user_name"
+                not in auth_details["interfaces"][interface]["mac_address"][client]
+            ):
                 auth_details["interfaces"][interface]["mac_address"][client]["user_name"] = ""
             session = {
                 "Interface": interface,
