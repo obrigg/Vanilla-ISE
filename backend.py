@@ -1,4 +1,4 @@
-__version__ = "22.06.13.01"
+__version__ = "22.06.26.01"
 __author__ = "Oren Brigg & Ramona Renner"
 __author_email__ = "obrigg@cisco.com / ramrenne@cisco.com"
 __license__ = "Cisco Sample Code License, Version 1.1 - https://developer.cisco.com/site/license/cisco-sample-code-license/"
@@ -118,7 +118,7 @@ def get_all_NADs():
         # Sorting the list
         pp(NAD_list_details)
         sorted_NAD_list = OrderedDict(
-            sorted(NAD_list_details.items(), key=lambda x: x[1])
+            sorted(NAD_list_details.items(), key=lambda x: x[0])
         )
         return sorted_NAD_list
     except:

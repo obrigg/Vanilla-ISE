@@ -6,6 +6,7 @@
 * Black'd, for PEP8.
 * Gracefully handling unknown OUI.
 * Added a "logout" button.
+* Device list uses device ID instead of IP addresses (for improved performance)
 
 ##### 05-May-2022
 * Added a page with a graphical representation of a switch and its port statuses.
