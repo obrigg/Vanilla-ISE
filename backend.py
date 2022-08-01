@@ -293,6 +293,13 @@ def check_ise_auth_status(mac_address: str):
                 status_details["IdentityGroup"] = status["authStatusOutputList"][
                     "authStatusList"
                 ]["authStatusElements"]["identity_group"]
+                # Add IP address, if available
+                if "framed_ip_address" in status["authStatusOutputList"][
+                    "authStatusList"]["authStatusElements"].keys():
+                    status_details["IPAddress"] = status["authStatusOutputList"][
+                    "authStatusList"]["authStatusElements"]["framed_ip_address"]
+                else:
+                    status_details["IPAddress"] = "N/A"
                 # Mention failure reason (if failed, or "none" is succeeded)
                 if (
                     status["authStatusOutputList"]["authStatusList"][
