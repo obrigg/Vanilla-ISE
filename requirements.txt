@@ -1,4 +1,4 @@
 pyats[library]
-flask==2.1.2
+flask==2.3.2
 MarkupSafe==2.1.1
 rich==12.3.0
