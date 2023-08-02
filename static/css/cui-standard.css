@@ -3624,7 +3624,6 @@ html ::-webkit-scrollbar-thumb:hover {
 }
 .cui .content {
  flex:1;
- overflow:hidden;
  min-height:100vh;
  -webkit-overflow-scrolling:touch
 }
