@@ -333,6 +333,7 @@ def check_ise_auth_status(mac_address: str):
 
 
 def get_device_ports(device_ip: str):
+    global parse_command
     """
     This function will retrieve the list of interfaces on a given NAD/Switch,
     the list of authentication sessions on that switch, and return a dictionary
@@ -391,6 +392,13 @@ def get_device_ports(device_ip: str):
         pp(f"[red]ERROR: Problem connecting to {device_ip}...")
         return [f"ERROR: Problem connecting to {device_ip}..."]
     # Get authentication sessions
+    Testcli=""
+    Testcli = device.execute(f"show ?")
+    pp(f"{Testcli}")
+
+    if "authentication" not in Testcli:
+        parse_command = 'access-session'
+
     try:
         auth_sessions = device.parse(f"show {parse_command}")
     except SchemaEmptyParserError:
