@@ -398,6 +398,8 @@ def get_device_ports(device_ip: str):
 
     if "authentication" not in Testcli:
         parse_command = 'access-session'
+    else:
+        parse_command = 'authentication session'
 
     try:
         auth_sessions = device.parse(f"show {parse_command}")
