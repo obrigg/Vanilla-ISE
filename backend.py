@@ -290,9 +290,18 @@ def check_ise_auth_status(mac_address: str):
                 status_details["Username"] = status["authStatusOutputList"][
                     "authStatusList"
                 ]["authStatusElements"]["user_name"]
-                status_details["IdentityGroup"] = status["authStatusOutputList"][
+                 # Add identity group, if available
+                if (
+                    "identity_group"
+                    in status["authStatusOutputList"]["authStatusList"][
+                        "authStatusElements"
+                    ].keys()
+                ):
+                     status_details["IdentityGroup"] = status["authStatusOutputList"][
                     "authStatusList"
-                ]["authStatusElements"]["identity_group"]
+                    ]["authStatusElements"]["identity_group"]
+                else:
+                    status_details["IdentityGroup"] = "N/A"
                 # Add IP address, if available
                 if "framed_ip_address" in status["authStatusOutputList"][
                     "authStatusList"]["authStatusElements"].keys():
