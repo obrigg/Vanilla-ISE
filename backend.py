@@ -36,8 +36,6 @@ voucher_group_B = "BBB-Vouchers"
 voucher_group_C = "CCC-Vouchers"
 timeout = 15 * 60  # in minutes
 batch = 50
-parse_command = "authentication session"  # 'access-session' or 'authentication session'
-# Some old switches do not support 'authentication session'
 
 auth = HTTPBasicAuth(ise_user, ise_password)
 async_auth = BasicAuth(ise_user, ise_password)
@@ -341,8 +339,26 @@ def check_ise_auth_status(mac_address: str):
 ######       End of ISE functions      ######
 
 
+def get_parse_command(device) -> str:
+    """
+    This function will determine which command should be used when getting
+    authentication sessions on the device.
+
+    Returns a string, one of the following values:
+      - access-session
+      - authentication session
+    """
+    Testcli=""
+    Testcli = device.execute(f"show ?")
+    pp(f"{Testcli}")
+
+    if "authentication" not in Testcli:
+        return 'access-session'
+    else:
+        return 'authentication session'
+
+
 def get_device_ports(device_ip: str):
-    global parse_command
     """
     This function will retrieve the list of interfaces on a given NAD/Switch,
     the list of authentication sessions on that switch, and return a dictionary
@@ -401,16 +417,8 @@ def get_device_ports(device_ip: str):
         pp(f"[red]ERROR: Problem connecting to {device_ip}...")
         return [f"ERROR: Problem connecting to {device_ip}..."]
     # Get authentication sessions
-    Testcli=""
-    Testcli = device.execute(f"show ?")
-    pp(f"{Testcli}")
-
-    if "authentication" not in Testcli:
-        parse_command = 'access-session'
-    else:
-        parse_command = 'authentication session'
-
     try:
+        parse_command = get_parse_command(device)
         auth_sessions = device.parse(f"show {parse_command}")
     except SchemaEmptyParserError:
         pp(f"[red]ERROR: No access sessions on {device_ip}.")
@@ -483,6 +491,7 @@ def get_device_auth_sessions(device_ip: str):
         return [f"ERROR: Problem connecting to {device_ip}..."]
     # Get authentication sessions
     try:
+        parse_command = get_parse_command(device)
         auth_sessions = device.parse(f"show {parse_command}")
     except SchemaEmptyParserError:
         pp(f"[red]ERROR: No access sessions on {device_ip}.")
@@ -612,6 +621,7 @@ def get_port_auth_sessions(device_ip: str, interface: str):
         return [f"ERROR: Problem connecting to {device_ip}..."]
     # Get authentication sessions
     try:
+        parse_command = get_parse_command(device)
         auth_sessions = device.parse(f"show {parse_command}")
     except SchemaEmptyParserError:
         pp(f"[red]ERROR: No access sessions on {device_ip}.")
@@ -714,7 +724,8 @@ def clear_port_auth_sessions(device_ip: str, interface: str):
         return [f"ERROR: Problem connecting to {device_ip}..."]
     # Clear authentication sessions
     try:
-        device.execute(f"clear authentication session interface {interface}")
+        parse_command = get_parse_command(device)
+        device.execute(f"clear {parse_command} interface {interface}")
     except:
         pp(f"[red]ERROR: Problem parsing information from {device_ip}.")
         device.disconnect()
